@@ -44,6 +44,9 @@ jobs:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          TTK_CLIENT_KEY: ${{ secrets.TTK_CLIENT_KEY }}
+          TTK_CLIENT_SECRET: ${{ secrets.TTK_CLIENT_SECRET }}
+          TTK_REFRESH_TOKEN: ${{ secrets.TTK_REFRESH_TOKEN }}
         run: |
           python pipeline.py
           rc=$?
@@ -90,6 +93,9 @@ jobs:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          TTK_CLIENT_KEY: ${{ secrets.TTK_CLIENT_KEY }}
+          TTK_CLIENT_SECRET: ${{ secrets.TTK_CLIENT_SECRET }}
+          TTK_REFRESH_TOKEN: ${{ secrets.TTK_REFRESH_TOKEN }}
         run: |
           python pipeline.py
           rc=$?
@@ -136,6 +142,9 @@ jobs:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          TTK_CLIENT_KEY: ${{ secrets.TTK_CLIENT_KEY }}
+          TTK_CLIENT_SECRET: ${{ secrets.TTK_CLIENT_SECRET }}
+          TTK_REFRESH_TOKEN: ${{ secrets.TTK_REFRESH_TOKEN }}
         run: |
           python pipeline.py
           rc=$?
