@@ -2,17 +2,18 @@ name: daily-shorts
 
 on:
   schedule:
-    - cron: '0 7 * * *'   # 10:00 SYR - Explained
-    - cron: '0 12 * * *'  # 15:00 SYR - Mystery
-    - cron: '0 17 * * *'  # 20:00 SYR - What If
+    - cron: '0 11 * * *'  # prepare -> publish 00:00 UTC = 8:00 PM US Eastern
+    - cron: '0 12 * * *'  # prepare -> publish 01:00 UTC = 9:00 PM US Eastern
+    - cron: '0 13 * * *'  # prepare -> publish 02:00 UTC = 10:00 PM US Eastern
   workflow_dispatch: {}
 
 jobs:
   explained:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == '0 7 * * *') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == '0 11 * * *') }}
     runs-on: ubuntu-latest
     env:
       CATEGORY: explained
+      PUBLISH_HOUR_UTC: '0'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -36,20 +37,29 @@ jobs:
           json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
           print('config ready')
           PY
-      - name: Generate and upload video
+      - name: Generate and upload video (1 retry)
         env:
           CF_TOKEN: ${{ secrets.CF_TOKEN }}
           CF_ACCOUNT: ${{ secrets.CF_ACCOUNT }}
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-        run: python pipeline.py
+        run: |
+          python pipeline.py
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo "::warning::First attempt failed (rc=$rc) - retrying ONCE"
+            python pipeline.py
+            rc=$?
+          fi
+          exit $rc
 
   mystery:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == '0 12 * * *') }}
     runs-on: ubuntu-latest
     env:
       CATEGORY: mystery
+      PUBLISH_HOUR_UTC: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -73,20 +83,29 @@ jobs:
           json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
           print('config ready')
           PY
-      - name: Generate and upload video
+      - name: Generate and upload video (1 retry)
         env:
           CF_TOKEN: ${{ secrets.CF_TOKEN }}
           CF_ACCOUNT: ${{ secrets.CF_ACCOUNT }}
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-        run: python pipeline.py
+        run: |
+          python pipeline.py
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo "::warning::First attempt failed (rc=$rc) - retrying ONCE"
+            python pipeline.py
+            rc=$?
+          fi
+          exit $rc
 
   whatif:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == '0 17 * * *') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == '0 13 * * *') }}
     runs-on: ubuntu-latest
     env:
       CATEGORY: whatif
+      PUBLISH_HOUR_UTC: '2'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -110,11 +129,19 @@ jobs:
           json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
           print('config ready')
           PY
-      - name: Generate and upload video
+      - name: Generate and upload video (1 retry)
         env:
           CF_TOKEN: ${{ secrets.CF_TOKEN }}
           CF_ACCOUNT: ${{ secrets.CF_ACCOUNT }}
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-        run: python pipeline.py
+        run: |
+          python pipeline.py
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo "::warning::First attempt failed (rc=$rc) - retrying ONCE"
+            python pipeline.py
+            rc=$?
+          fi
+          exit $rc
