@@ -46,9 +46,14 @@ def get_credentials():
     return creds
 
 
-def upload_video(meta, privacy="public"):
+def upload_video(meta, privacy="public", publish_at=None):
     creds = get_credentials()
     yt = build("youtube", "v3", credentials=creds)
+    status = {"selfDeclaredMadeForKids": False}
+    if publish_at:
+        status.update({"privacyStatus": "private", "publishAt": publish_at})
+    else:
+        status["privacyStatus"] = privacy
     body = {
         "snippet": {
             "title": meta["title"][:100],
@@ -56,15 +61,17 @@ def upload_video(meta, privacy="public"):
             "tags": meta.get("tags", []),
             "categoryId": "24",
         },
-        "status": {"privacyStatus": privacy, "selfDeclaredMadeForKids": False},
+        "status": status,
     }
     media = MediaFileUpload(meta["file"], chunksize=-1, resumable=True, mimetype="video/mp4")
     request = yt.videos().insert(part="snippet,status", body=body, media_body=media)
     response = None
     while response is None:
-        status, response = request.next_chunk()
-        if status:
-            print(f"upload {int(status.progress() * 100)}%", flush=True)
+        prog, response = request.next_chunk()
+        if prog:
+            print(f"upload {int(prog.progress() * 100)}%", flush=True)
+    if publish_at:
+        print(f"SCHEDULED: https://youtu.be/{response['id']} -> {publish_at}", flush=True)
     print(f"UPLOADED: https://youtu.be/{response['id']}", flush=True)
     return response["id"]
 
