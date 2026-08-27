@@ -1,0 +1,14 @@
+{
+  "gemini_api_key": "",
+  "pexels_api_key": "",
+  "use_pexels": false,
+  "pollinations_key": "",
+  "niche": "psychology and human behavior stories",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "voice_rate": "+6%",
+  "video_width": 1080,
+  "video_height": 1920,
+  "words_per_caption": 3,
+  "upload_to_youtube": true,
+  "privacy": "public"
+}
