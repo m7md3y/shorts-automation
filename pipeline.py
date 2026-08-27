@@ -80,6 +80,7 @@ def scene_video_visual(srcs, audio, dur_s, idx, workdir, w, h, role="norm", sfx=
 
 
 import difflib
+import datetime
 import json
 import os
 import pathlib
@@ -1108,9 +1109,18 @@ def main():
         sys.exit(4)
     append_json_list("today_cats.json", chosen)
     if cfg.get("upload_to_youtube"):
+        publish_at = None
+        pub_hour = os.environ.get("PUBLISH_HOUR_UTC", "")
+        if pub_hour.isdigit():
+            now = datetime.datetime.now(datetime.timezone.utc)
+            target = now.replace(hour=int(pub_hour), minute=0, second=0, microsecond=0)
+            if target <= now + datetime.timedelta(hours=2):
+                target += datetime.timedelta(days=1)
+            publish_at = target.strftime("%Y-%m-%dT%H:%M:%SZ")
+            log(f"SCHEDULED PUBLISH: {publish_at}")
         try:
             from youtube_upload import upload_video
-            vid = upload_video(meta, cfg.get("privacy", "public"))
+            vid = upload_video(meta, cfg.get("privacy", "public"), publish_at=publish_at)
             p = BASE / "data_state.json"
             st = json.loads(p.read_text(encoding="utf-8"))
             if st:
@@ -1119,6 +1129,7 @@ def main():
                 json.dump(st, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         except Exception as e:
             log(f"UPLOAD FAILED (saved locally): {e}")
+            sys.exit(5)
 
 
 if __name__ == "__main__":
