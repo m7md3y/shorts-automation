@@ -1131,6 +1131,17 @@ def main():
             log(f"UPLOAD FAILED (saved locally): {e}")
             sys.exit(5)
 
+    ttk_key = os.environ.get("TTK_CLIENT_KEY", "")
+    ttk_tk = os.environ.get("TTK_REFRESH_TOKEN", "")
+    if cfg.get("upload_to_youtube") and ttk_key and ttk_tk:
+        try:
+            from tiktok_upload import post_video as ttk_post
+            ttk_post(meta["file"], meta["title"])
+        except Exception as e:
+            log(f"TIKTOK FAILED: {e}")
+    else:
+        log("TIKTOK: not configured, skipped")
+
 
 if __name__ == "__main__":
     main()
