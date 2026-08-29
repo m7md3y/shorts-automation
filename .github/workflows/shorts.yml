@@ -3,13 +3,13 @@ name: daily-shorts
 on:
   schedule:
     - cron: '25 23 * * *'   # prepare -> publish 00:00 UTC (whatif)
-    - cron: '25 2 * * *'   # prepare -> publish 03:00 UTC (whatif)
-    - cron: '25 5 * * *'   # prepare -> publish 06:00 UTC (whatif)
-    - cron: '25 8 * * *'   # prepare -> publish 09:00 UTC (mystery)
+    - cron: '25 1 * * *'   # prepare -> publish 02:00 UTC (whatif)
     - cron: '25 11 * * *'   # prepare -> publish 12:00 UTC (explained)
-    - cron: '25 14 * * *'   # prepare -> publish 15:00 UTC (mystery)
+    - cron: '25 13 * * *'   # prepare -> publish 14:00 UTC (mystery)
+    - cron: '25 15 * * *'   # prepare -> publish 16:00 UTC (whatif)
     - cron: '25 17 * * *'   # prepare -> publish 18:00 UTC (explained)
-    - cron: '25 20 * * *'   # prepare -> publish 21:00 UTC (whatif)
+    - cron: '25 19 * * *'   # prepare -> publish 20:00 UTC (mystery)
+    - cron: '25 21 * * *'   # prepare -> publish 22:00 UTC (whatif)
   workflow_dispatch:
     inputs:
       category:
@@ -29,13 +29,13 @@ on:
         options:
           - now
           - '0'
-          - '3'
-          - '6'
-          - '9'
+          - '2'
           - '12'
-          - '15'
+          - '14'
+          - '16'
           - '18'
-          - '21'
+          - '20'
+          - '22'
 
 jobs:
   manual:
@@ -136,110 +136,12 @@ jobs:
           fi
           exit $rc
 
-  s03_whatif:
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 2 * * *' }}
+  s02_whatif:
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 1 * * *' }}
     runs-on: ubuntu-latest
     env:
       CATEGORY: whatif
-      PUBLISH_HOUR_UTC: '3'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install runtime
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core fonts-noto-core
-          pip install --quiet -r requirements.txt
-      - name: Inject secrets
-        env:
-          GEMINI: ${{ secrets.GEMINI_API_KEY }}
-          POLL: ${{ secrets.POLLINATIONS_KEY }}
-        run: |
-          python - <<'PY'
-          import json, os
-          cfg = json.load(open('config.json', encoding='utf-8'))
-          cfg['gemini_api_key'] = os.environ.get('GEMINI', '')
-          cfg['pollinations_key'] = os.environ.get('POLL', '')
-          json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
-          print('config ready')
-          PY
-      - name: Generate and upload video (1 retry)
-        env:
-          CF_TOKEN: ${{ secrets.CF_TOKEN }}
-          CF_ACCOUNT: ${{ secrets.CF_ACCOUNT }}
-          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
-          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
-          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-          TTK_CLIENT_KEY: ${{ secrets.TTK_CLIENT_KEY }}
-          TTK_CLIENT_SECRET: ${{ secrets.TTK_CLIENT_SECRET }}
-          TTK_REFRESH_TOKEN: ${{ secrets.TTK_REFRESH_TOKEN }}
-        run: |
-          python pipeline.py
-          rc=$?
-          if [ $rc -ne 0 ]; then
-            echo "::warning::First attempt failed (rc=$rc) - retrying ONCE"
-            python pipeline.py
-            rc=$?
-          fi
-          exit $rc
-
-  s06_whatif:
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 5 * * *' }}
-    runs-on: ubuntu-latest
-    env:
-      CATEGORY: whatif
-      PUBLISH_HOUR_UTC: '6'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install runtime
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core fonts-noto-core
-          pip install --quiet -r requirements.txt
-      - name: Inject secrets
-        env:
-          GEMINI: ${{ secrets.GEMINI_API_KEY }}
-          POLL: ${{ secrets.POLLINATIONS_KEY }}
-        run: |
-          python - <<'PY'
-          import json, os
-          cfg = json.load(open('config.json', encoding='utf-8'))
-          cfg['gemini_api_key'] = os.environ.get('GEMINI', '')
-          cfg['pollinations_key'] = os.environ.get('POLL', '')
-          json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
-          print('config ready')
-          PY
-      - name: Generate and upload video (1 retry)
-        env:
-          CF_TOKEN: ${{ secrets.CF_TOKEN }}
-          CF_ACCOUNT: ${{ secrets.CF_ACCOUNT }}
-          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
-          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
-          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-          TTK_CLIENT_KEY: ${{ secrets.TTK_CLIENT_KEY }}
-          TTK_CLIENT_SECRET: ${{ secrets.TTK_CLIENT_SECRET }}
-          TTK_REFRESH_TOKEN: ${{ secrets.TTK_REFRESH_TOKEN }}
-        run: |
-          python pipeline.py
-          rc=$?
-          if [ $rc -ne 0 ]; then
-            echo "::warning::First attempt failed (rc=$rc) - retrying ONCE"
-            python pipeline.py
-            rc=$?
-          fi
-          exit $rc
-
-  s09_mystery:
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 8 * * *' }}
-    runs-on: ubuntu-latest
-    env:
-      CATEGORY: mystery
-      PUBLISH_HOUR_UTC: '9'
+      PUBLISH_HOUR_UTC: '2'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -332,12 +234,61 @@ jobs:
           fi
           exit $rc
 
-  s15_mystery:
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 14 * * *' }}
+  s14_mystery:
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 13 * * *' }}
     runs-on: ubuntu-latest
     env:
       CATEGORY: mystery
-      PUBLISH_HOUR_UTC: '15'
+      PUBLISH_HOUR_UTC: '14'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install runtime
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core fonts-noto-core
+          pip install --quiet -r requirements.txt
+      - name: Inject secrets
+        env:
+          GEMINI: ${{ secrets.GEMINI_API_KEY }}
+          POLL: ${{ secrets.POLLINATIONS_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os
+          cfg = json.load(open('config.json', encoding='utf-8'))
+          cfg['gemini_api_key'] = os.environ.get('GEMINI', '')
+          cfg['pollinations_key'] = os.environ.get('POLL', '')
+          json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+          print('config ready')
+          PY
+      - name: Generate and upload video (1 retry)
+        env:
+          CF_TOKEN: ${{ secrets.CF_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CF_ACCOUNT }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          TTK_CLIENT_KEY: ${{ secrets.TTK_CLIENT_KEY }}
+          TTK_CLIENT_SECRET: ${{ secrets.TTK_CLIENT_SECRET }}
+          TTK_REFRESH_TOKEN: ${{ secrets.TTK_REFRESH_TOKEN }}
+        run: |
+          python pipeline.py
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo "::warning::First attempt failed (rc=$rc) - retrying ONCE"
+            python pipeline.py
+            rc=$?
+          fi
+          exit $rc
+
+  s16_whatif:
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 15 * * *' }}
+    runs-on: ubuntu-latest
+    env:
+      CATEGORY: whatif
+      PUBLISH_HOUR_UTC: '16'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -430,12 +381,61 @@ jobs:
           fi
           exit $rc
 
-  s21_whatif:
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 20 * * *' }}
+  s20_mystery:
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 19 * * *' }}
+    runs-on: ubuntu-latest
+    env:
+      CATEGORY: mystery
+      PUBLISH_HOUR_UTC: '20'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install runtime
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core fonts-noto-core
+          pip install --quiet -r requirements.txt
+      - name: Inject secrets
+        env:
+          GEMINI: ${{ secrets.GEMINI_API_KEY }}
+          POLL: ${{ secrets.POLLINATIONS_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os
+          cfg = json.load(open('config.json', encoding='utf-8'))
+          cfg['gemini_api_key'] = os.environ.get('GEMINI', '')
+          cfg['pollinations_key'] = os.environ.get('POLL', '')
+          json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+          print('config ready')
+          PY
+      - name: Generate and upload video (1 retry)
+        env:
+          CF_TOKEN: ${{ secrets.CF_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CF_ACCOUNT }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          TTK_CLIENT_KEY: ${{ secrets.TTK_CLIENT_KEY }}
+          TTK_CLIENT_SECRET: ${{ secrets.TTK_CLIENT_SECRET }}
+          TTK_REFRESH_TOKEN: ${{ secrets.TTK_REFRESH_TOKEN }}
+        run: |
+          python pipeline.py
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo "::warning::First attempt failed (rc=$rc) - retrying ONCE"
+            python pipeline.py
+            rc=$?
+          fi
+          exit $rc
+
+  s22_whatif:
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 21 * * *' }}
     runs-on: ubuntu-latest
     env:
       CATEGORY: whatif
-      PUBLISH_HOUR_UTC: '21'
+      PUBLISH_HOUR_UTC: '22'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
