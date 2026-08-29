@@ -108,28 +108,28 @@ PEXELS_URL = "https://api.pexels.com/videos/search"
 
 CATEGORIES = {
     "explained": {
-        "name": "Explained",
-        "name_ar": "مُفسَّر",
-        "prompt_suffix": "Focus on strange feelings, brain tricks, psychology facts, human behavior anomalies. The viewer should feel 'I never knew this!'",
-        "visual_style": "psychology, brain scans, human behavior, close-up faces, abstract neural networks",
-        "tone": "fascinated, revealing, mind-blowing",
-        "hashtag": "#psychology #brainfacts #explained #humanbehavior",
+        "name": "Survival",
+        "name_ar": "نجاة",
+        "prompt_suffix": "EXTREME US-centric survival: home invasion by gang, giant predator / Kaiju eats Earth, asteroid hits NYC, mega-tornado, wildfire, bear/shark attack, blizzard stranding. Each idea MUST be viscerally visual, high-stakes, primal fear for American viewers, and end with 1 actionable survival tip. Think 'what if a giant lion swallowed Earth' level imagination but grounded in survival logic.",
+        "visual_style": "Hollywood thriller, American suburb/forest/ocean/desert, giant creature silhouette, terrified family, tornado fire, emergency gear, cinematic volumetric lighting, ultra detailed",
+        "tone": "intense, urgent, cinematic, heart-pounding, American",
+        "hashtag": "#survival #whatif #survivalguide #usastory",
     },
     "mystery": {
-        "name": "Mysterious Stories",
-        "name_ar": "قصص غامضة",
-        "prompt_suffix": "Focus on historical mysteries, unexplained events, cold cases, strange disappearances, ancient secrets. Build suspense and tension.",
-        "visual_style": "dark atmosphere, mysterious locations, historical settings, shadows, fog, ancient artifacts",
-        "tone": "suspenseful, mysterious, dark",
-        "hashtag": "#mystery #unsolved #darkstories #historicalmystery",
+        "name": "Survival",
+        "name_ar": "نجاة",
+        "prompt_suffix": "EXTREME US-centric survival: home invasion by gang, giant predator / Kaiju eats Earth, asteroid hits NYC, mega-tornado, wildfire, bear/shark attack, blizzard stranding. Each idea MUST be viscerally visual, high-stakes, primal fear for American viewers, and end with 1 actionable survival tip. Think 'what if a giant lion swallowed Earth' level imagination but grounded in survival logic.",
+        "visual_style": "Hollywood thriller, American suburb/forest/ocean/desert, giant creature silhouette, terrified family, tornado fire, emergency gear, cinematic volumetric lighting, ultra detailed",
+        "tone": "intense, urgent, cinematic, heart-pounding, American",
+        "hashtag": "#survival #whatif #survivalguide #usastory",
     },
     "whatif": {
-        "name": "What If",
-        "name_ar": "ماذا لو",
-        "prompt_suffix": "Focus on dangerous survival scenarios: lost in forest/desert/ocean, natural disasters, emergency situations. Include survival tips and end with safety advice.",
-        "visual_style": "danger, survival, nature extremes, wilderness, desert, ocean, emergency equipment",
-        "tone": "urgent, survival, educational",
-        "hashtag": "#whatif #survival #danger #safetytips",
+        "name": "Survival",
+        "name_ar": "نجاة",
+        "prompt_suffix": "EXTREME US-centric survival: home invasion by gang, giant predator / Kaiju eats Earth, asteroid hits NYC, mega-tornado, wildfire, bear/shark attack, blizzard stranding. Each idea MUST be viscerally visual, high-stakes, primal fear for American viewers, and end with 1 actionable survival tip. Think 'what if a giant lion swallowed Earth' level imagination but grounded in survival logic.",
+        "visual_style": "Hollywood thriller, American suburb/forest/ocean/desert, giant creature silhouette, terrified family, tornado fire, emergency gear, cinematic volumetric lighting, ultra detailed",
+        "tone": "intense, urgent, cinematic, heart-pounding, American",
+        "hashtag": "#survival #whatif #survivalguide #usastory",
     },
 }
 
@@ -213,14 +213,14 @@ def script_qc(data, cfg):
 
 def pick_best_hook(api_key, title, scenes_summary, candidates):
     cands = "\n".join(f"{n + 1}. {c}" for n, c in enumerate(candidates))
-    prompt = f"""You are a ruthless YouTube Shorts retention expert. Video title: {title}
+    prompt = f"""You are a ruthless US survival Shorts retention expert. Video title: {title}
 Story: {scenes_summary}
 
 Hook candidates:
 {cands}
 
-Score each hook 1-10 on: instant curiosity gap, emotional punch, stop-the-scroll power, simplicity, truthfulness.
-Think briefly, then answer with ONLY the NUMBER of the winner."""
+Score each hook 1-10 on: instant curiosity gap for US viewer, primal fear trigger, stop-scroll power in <1 sec, simplicity (5-8 words), US relatability, truthfulness.
+Penalize weak/filler/overlong hooks. Think briefly, then answer with ONLY the NUMBER of the winner."""
     body = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0.3, "maxOutputTokens": 800, "thinkingConfig": {"thinkingBudget": 0}},
@@ -247,42 +247,45 @@ def gemini_script(api_key, niche, category="explained"):
     titles_str = "\n".join(used_titles[-40:]) if used_titles else "none"
     cat = CATEGORIES.get(category, CATEGORIES["explained"])
 
-    prompt = f"""You are the world's highest-retention YouTube Shorts writer. Your scripts have generated billions of views.
+    prompt = f"""You are the world's #1 YouTube Shorts writer for the US market. Your survival scripts generated billions of views. You weaponize primal fear + curiosity for American viewers.
 
 CATEGORY: {cat['name']} ({cat['name_ar']})
 STYLE: {cat['prompt_suffix']}
 TONE: {cat['tone']}
+TARGET: American audience, American English, US cultural triggers (suburb, 911, family, home, NYC, tornado alley)
 
 Topics already used (never repeat):
 {titles_str}
 
-STEP 1 — IDEA SELECTION: Brainstorm 10 ideas for the {cat['name']} category. Choose the ONE with historically proven massive engagement on Shorts. It must be truthful, fascinating, and VISUAL (easy to show in video).
+STEP 1 — IDEA SELECTION: Brainstorm 10 EXTREME survival/whatif ideas that make a US viewer's heart DROP: home invasion at 3AM, gang surrounds house, giant lion/Kaiju swallows Earth, asteroid hits NYC, mega-tornado rips roof, bear rips tent, shark circles boat, blizzard traps car on highway, wildfire surrounds home. Score each 1-10 on VISUAL POWER + US relatability + novelty + survival teachability. Pick the 10/10 winner.
 
-STEP 2 — SCRIPT: Write with GRIPPING language: power verbs, concrete images, zero filler. Every sentence earns the next second of attention.
+STEP 2 — KILLER HOOKS: Write 8 hooks, each 5-8 words MAX, each a different angle, each starts with power verb/number/shock. Examples: "Gang kicks your door at 3AM" "Giant lion swallows Earth in 60 seconds" "Bear rips tent while you sleep" "Tornado rips roof off instantly". Each must create INSTANT curiosity gap, stop scroll in <1 sec, no weak filler.
+
+STEP 3 — SCRIPT: Cinematic survival story: Hook -> escalating danger (3-4 scenes) -> clever survival trick -> 1 actionable safety tip -> loop back to first visual. Every WORD earns the next second: power verbs, concrete sensory details, zero filler, max 15 words per scene.
 
 Return ONLY valid JSON exactly like:
 {{
-  "title": "SEO title under 70 chars starting with a search keyword",
-  "description": "2 keyword-rich sentences + exactly 4 hashtags",
-  "tags": ["psychology", "human behavior", "brain facts", "shorts"],
-  "hook": "your single best hook (also included in hook_candidates)",
-  "hook_candidates": ["8 different hooks, each max 8 words, each a different angle"],
+  "title": "How to Survive ... / What If ... under 70 chars, starts with search keyword",
+  "description": "2 keyword-rich sentences for US search + exactly 4 hashtags",
+  "tags": ["survival", "how to survive", "what if", "us survival", "safety tips", "shorts"],
+  "hook": "your single best hook (also in hook_candidates)",
+  "hook_candidates": ["8 hooks, each 5-8 words, different angle, US primal fear"],
   "scenes": [
-    {{"text": "narration max 15 words", "visuals": ["concrete visual 1", "concrete visual 2"], "overlays": []}}
+    {{"text": "narration max 15 words, punchy", "visuals": ["ultra-concrete cinematic visual 1", "visual 2"], "overlays": []}}
   ]
 }}
 
-STRICT rules:
-- Number of scenes: 6 to 10 depending on story needs.
-- Total narration words: 90-150. Detailed storytelling.
-- The LAST scene must use the SAME visual concept as the first scene (loop ending).
-- 8 hook_candidates: max 8 words each, punchy, instant curiosity gap.
-- scenes[0].text must CONTINUE after the hook.
-- visuals per scene: 1 to 3 concrete, specific, visual queries.
+STRICT RULES - EVERY WORD CRAFTED:
+- Hooks: 5-8 words, punchy, US primal fear, power verb first, instant stop-scroll.
+- Title: SEO for US search, starts with "How to Survive" or "What If", <70 chars.
+- Scenes: 6-10, total words 90-150, each scene text max 15 words.
+- Visuals per scene: 1-3 ULTRA-concrete Hollywood-thriller queries that ILLUSTRATE EXACTLY the narration (if text says "gang kicks door", visual MUST be "close-up masked gang member kicking American suburban front door at night, porch light flickering").
+- Visual style: photorealistic, cinematic, American setting, volumetric lighting, ultra detailed - must match narration emotion word-for-word.
+- LAST scene visual concept = FIRST scene (loop ending).
+- scenes[0].text must CONTINUE after the hook (no repeat).
 - Use straight apostrophes only.
-- SEO title: start with searchable keywords.
-- tags: 5-8 lowercase search terms.
-- No fabricated statistics or medical claims.
+- Tags: 5-8 lowercase US search terms.
+- No fabricated stats/medical claims.
 - {cat['prompt_suffix']}"""
     body = {
         "contents": [{"parts": [{"text": prompt}]}],
@@ -473,21 +476,21 @@ def enhance_prompt(query, scene_text, topic):
     api_key = load_config().get("gemini_api_key", "")
     if not api_key:
         return query
-    instruction = f"""You are an award-winning cinematographer and photo director preparing a shot for a vertical 9:16 (720x1280) photorealistic image. Describe EVERY pixel: subject details, clothing texture, skin tone, eye direction, finger placement, background bokeh, light rays, dust particles, color grading.
+    instruction = f"""You are an award-winning Hollywood thriller cinematographer for vertical 9:16 (720x1280) photorealistic survival images. Every image MUST illustrate EXACTLY the narration line - if narration says "gang kicks door", image MUST show that, no generic.
 
 STORY CONTEXT: {topic}
 NARRATION LINE: {scene_text}
 RAW SHOT IDEA: {query}
 
-Rewrite the raw shot idea into ONE rich English image prompt (60-110 words). Specify precisely:
-- exact subject: age, appearance, clothing, facial expression, body pose, what they are doing
-- setting details: location specifics, key props and where they sit in frame
-- composition: vertical framing, subject placement (rule of thirds), foreground/midground/background layers
-- camera: lens feel (35mm/50mm), angle (eye-level/low/high), depth of field
-- lighting: type, direction, mood, color temperature
-- color palette and atmosphere matching the narration's emotion
+Rewrite into ONE rich English image prompt (60-110 words) - US survival thriller, American setting:
+- exact subject: age, appearance, clothing, terrified expression, body pose, action matching narration word-for-word
+- setting: American suburb/forest/ocean/desert specifics, key props placed exactly as narration demands
+- composition: vertical 9:16, rule of thirds, foreground/midground/background layers that complete the scene
+- camera: 35mm/50mm feel, eye-level/low/high angle, shallow depth of field
+- lighting: cinematic volumetric, direction, mood, color temp matching survival emotion (cold blue for blizzard, orange fire for wildfire, harsh night porch light for home invasion)
+- atmosphere: heart-pounding, every pixel tells the survival story
 
-Rules: photorealistic photography only. No text/watermarks/logos in image. No camera gear jargon beyond lens feel. Output ONLY the final prompt text, nothing else."""
+Rules: photorealistic photography only, ultra sharp, no text/watermarks/logos, no gear jargon beyond lens feel. Output ONLY final prompt, nothing else."""
     body = {
         "contents": [{"parts": [{"text": instruction}]}],
         "generationConfig": {
@@ -1030,7 +1033,7 @@ def build_video(cfg, data, category="explained"):
     seo_tags = data.get("tags") or []
     hash_tags = [wd.strip("#").lower() for wd in data["description"].split() if wd.startswith("#")]
     all_tags = []
-    for t in list(seo_tags) + hash_tags + ["psychology shorts", "human mind"]:
+    for t in list(seo_tags) + hash_tags + ["survival shorts", "how to survive", "what if"]:
         tl = str(t).strip().lower()
         if tl and tl not in all_tags:
             all_tags.append(tl)
