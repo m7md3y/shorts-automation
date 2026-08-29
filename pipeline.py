@@ -1111,8 +1111,12 @@ def main():
     if cfg.get("upload_to_youtube"):
         publish_at = None
         pub_hour = os.environ.get("PUBLISH_HOUR_UTC", "")
-        if pub_hour.isdigit():
-            now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if pub_hour == "now":
+            target = now + datetime.timedelta(minutes=3)
+            publish_at = target.strftime("%Y-%m-%dT%H:%M:%SZ")
+            log(f"PUBLISH NOW: {publish_at}")
+        elif pub_hour.isdigit():
             target = now.replace(hour=int(pub_hour), minute=0, second=0, microsecond=0)
             if target <= now + datetime.timedelta(hours=2):
                 target += datetime.timedelta(days=1)
