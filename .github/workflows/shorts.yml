@@ -17,6 +17,16 @@ on:
           - explained
           - mystery
           - all
+      publish_hour:
+        description: 'Publish hour UTC, or "now" to publish immediately'
+        required: false
+        default: 'now'
+        type: choice
+        options:
+          - now
+          - '0'
+          - '1'
+          - '2'
 
 
 jobs:
@@ -25,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CATEGORY: explained
-      PUBLISH_HOUR_UTC: '0'
+      PUBLISH_HOUR_UTC: ${{ github.event.inputs.publish_hour || '0' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -74,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CATEGORY: mystery
-      PUBLISH_HOUR_UTC: '1'
+      PUBLISH_HOUR_UTC: ${{ github.event.inputs.publish_hour || '1' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -123,7 +133,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CATEGORY: whatif
-      PUBLISH_HOUR_UTC: '2'
+      PUBLISH_HOUR_UTC: ${{ github.event.inputs.publish_hour || '2' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
