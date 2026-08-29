@@ -5,11 +5,23 @@ on:
     - cron: '0 11 * * *'  # prepare -> publish 00:00 UTC = 8:00 PM US Eastern
     - cron: '0 12 * * *'  # prepare -> publish 01:00 UTC = 9:00 PM US Eastern
     - cron: '0 13 * * *'  # prepare -> publish 02:00 UTC = 10:00 PM US Eastern
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      category:
+        description: 'Which category to run (all = everything)'
+        required: false
+        default: 'whatif'
+        type: choice
+        options:
+          - whatif
+          - explained
+          - mystery
+          - all
+
 
 jobs:
   explained:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == '0 11 * * *') }}
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 11 * * *') || (github.event_name == 'workflow_dispatch' && (github.event.inputs.category == 'explained' || github.event.inputs.category == 'all')) }}
     runs-on: ubuntu-latest
     env:
       CATEGORY: explained
@@ -58,7 +70,7 @@ jobs:
           exit $rc
 
   mystery:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == '0 12 * * *') }}
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 12 * * *') || (github.event_name == 'workflow_dispatch' && (github.event.inputs.category == 'mystery' || github.event.inputs.category == 'all')) }}
     runs-on: ubuntu-latest
     env:
       CATEGORY: mystery
@@ -107,7 +119,7 @@ jobs:
           exit $rc
 
   whatif:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == '0 13 * * *') }}
+    if: ${{ (github.event_name == 'schedule' && github.event.schedule == '0 13 * * *') || (github.event_name == 'workflow_dispatch' && (github.event.inputs.category == 'whatif' || github.event.inputs.category == 'all')) }}
     runs-on: ubuntu-latest
     env:
       CATEGORY: whatif
