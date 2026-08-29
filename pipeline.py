@@ -1118,7 +1118,7 @@ def main():
             log(f"PUBLISH NOW: {publish_at}")
         elif pub_hour.isdigit():
             target = now.replace(hour=int(pub_hour), minute=0, second=0, microsecond=0)
-            if target <= now + datetime.timedelta(hours=2):
+            if target <= now:
                 target += datetime.timedelta(days=1)
             publish_at = target.strftime("%Y-%m-%dT%H:%M:%SZ")
             log(f"SCHEDULED PUBLISH: {publish_at}")
