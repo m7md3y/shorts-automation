@@ -3,12 +3,11 @@ name: daily-shorts
 on:
   schedule:
     - cron: '25 23 * * *'   # prepare -> publish 00:00 UTC (whatif)
+    - cron: '25 0 * * *'   # prepare -> publish 01:00 UTC (whatif)
     - cron: '25 1 * * *'   # prepare -> publish 02:00 UTC (whatif)
     - cron: '25 11 * * *'   # prepare -> publish 12:00 UTC (explained)
-    - cron: '25 13 * * *'   # prepare -> publish 14:00 UTC (mystery)
     - cron: '25 15 * * *'   # prepare -> publish 16:00 UTC (whatif)
     - cron: '25 17 * * *'   # prepare -> publish 18:00 UTC (explained)
-    - cron: '25 19 * * *'   # prepare -> publish 20:00 UTC (mystery)
     - cron: '25 21 * * *'   # prepare -> publish 22:00 UTC (whatif)
   workflow_dispatch:
     inputs:
@@ -29,12 +28,11 @@ on:
         options:
           - now
           - '0'
+          - '1'
           - '2'
           - '12'
-          - '14'
           - '16'
           - '18'
-          - '20'
           - '22'
 
 jobs:
@@ -93,6 +91,55 @@ jobs:
     env:
       CATEGORY: whatif
       PUBLISH_HOUR_UTC: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install runtime
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core fonts-noto-core
+          pip install --quiet -r requirements.txt
+      - name: Inject secrets
+        env:
+          GEMINI: ${{ secrets.GEMINI_API_KEY }}
+          POLL: ${{ secrets.POLLINATIONS_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os
+          cfg = json.load(open('config.json', encoding='utf-8'))
+          cfg['gemini_api_key'] = os.environ.get('GEMINI', '')
+          cfg['pollinations_key'] = os.environ.get('POLL', '')
+          json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+          print('config ready')
+          PY
+      - name: Generate and upload video (1 retry)
+        env:
+          CF_TOKEN: ${{ secrets.CF_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CF_ACCOUNT }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          TTK_CLIENT_KEY: ${{ secrets.TTK_CLIENT_KEY }}
+          TTK_CLIENT_SECRET: ${{ secrets.TTK_CLIENT_SECRET }}
+          TTK_REFRESH_TOKEN: ${{ secrets.TTK_REFRESH_TOKEN }}
+        run: |
+          python pipeline.py
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo "::warning::First attempt failed (rc=$rc) - retrying ONCE"
+            python pipeline.py
+            rc=$?
+          fi
+          exit $rc
+
+  s01_whatif:
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 0 * * *' }}
+    runs-on: ubuntu-latest
+    env:
+      CATEGORY: whatif
+      PUBLISH_HOUR_UTC: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -234,55 +281,6 @@ jobs:
           fi
           exit $rc
 
-  s14_mystery:
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 13 * * *' }}
-    runs-on: ubuntu-latest
-    env:
-      CATEGORY: mystery
-      PUBLISH_HOUR_UTC: '14'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install runtime
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core fonts-noto-core
-          pip install --quiet -r requirements.txt
-      - name: Inject secrets
-        env:
-          GEMINI: ${{ secrets.GEMINI_API_KEY }}
-          POLL: ${{ secrets.POLLINATIONS_KEY }}
-        run: |
-          python - <<'PY'
-          import json, os
-          cfg = json.load(open('config.json', encoding='utf-8'))
-          cfg['gemini_api_key'] = os.environ.get('GEMINI', '')
-          cfg['pollinations_key'] = os.environ.get('POLL', '')
-          json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
-          print('config ready')
-          PY
-      - name: Generate and upload video (1 retry)
-        env:
-          CF_TOKEN: ${{ secrets.CF_TOKEN }}
-          CF_ACCOUNT: ${{ secrets.CF_ACCOUNT }}
-          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
-          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
-          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-          TTK_CLIENT_KEY: ${{ secrets.TTK_CLIENT_KEY }}
-          TTK_CLIENT_SECRET: ${{ secrets.TTK_CLIENT_SECRET }}
-          TTK_REFRESH_TOKEN: ${{ secrets.TTK_REFRESH_TOKEN }}
-        run: |
-          python pipeline.py
-          rc=$?
-          if [ $rc -ne 0 ]; then
-            echo "::warning::First attempt failed (rc=$rc) - retrying ONCE"
-            python pipeline.py
-            rc=$?
-          fi
-          exit $rc
-
   s16_whatif:
     if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 15 * * *' }}
     runs-on: ubuntu-latest
@@ -338,55 +336,6 @@ jobs:
     env:
       CATEGORY: explained
       PUBLISH_HOUR_UTC: '18'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install runtime
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core fonts-noto-core
-          pip install --quiet -r requirements.txt
-      - name: Inject secrets
-        env:
-          GEMINI: ${{ secrets.GEMINI_API_KEY }}
-          POLL: ${{ secrets.POLLINATIONS_KEY }}
-        run: |
-          python - <<'PY'
-          import json, os
-          cfg = json.load(open('config.json', encoding='utf-8'))
-          cfg['gemini_api_key'] = os.environ.get('GEMINI', '')
-          cfg['pollinations_key'] = os.environ.get('POLL', '')
-          json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
-          print('config ready')
-          PY
-      - name: Generate and upload video (1 retry)
-        env:
-          CF_TOKEN: ${{ secrets.CF_TOKEN }}
-          CF_ACCOUNT: ${{ secrets.CF_ACCOUNT }}
-          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
-          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
-          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-          TTK_CLIENT_KEY: ${{ secrets.TTK_CLIENT_KEY }}
-          TTK_CLIENT_SECRET: ${{ secrets.TTK_CLIENT_SECRET }}
-          TTK_REFRESH_TOKEN: ${{ secrets.TTK_REFRESH_TOKEN }}
-        run: |
-          python pipeline.py
-          rc=$?
-          if [ $rc -ne 0 ]; then
-            echo "::warning::First attempt failed (rc=$rc) - retrying ONCE"
-            python pipeline.py
-            rc=$?
-          fi
-          exit $rc
-
-  s20_mystery:
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 19 * * *' }}
-    runs-on: ubuntu-latest
-    env:
-      CATEGORY: mystery
-      PUBLISH_HOUR_UTC: '20'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
