@@ -36,6 +36,14 @@ on:
           - '16:30'
           - '17'
           - '17:30'
+      preview:
+        description: 'Preview titles only (no video)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 jobs:
   manual:
@@ -44,6 +52,7 @@ jobs:
     env:
       CATEGORY: ${{ github.event.inputs.category || 'supernatural' }}
       PUBLISH_HOUR_UTC: ${{ github.event.inputs.publish_hour || 'now' }}
+      PREVIEW_TITLES: ${{ github.event.inputs.preview }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
