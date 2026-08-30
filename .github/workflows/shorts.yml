@@ -2,13 +2,13 @@ name: daily-shorts
 
 on:
   schedule:
-    - cron: '25 23 * * *'   # publish 0 UTC (supernatural)
-    - cron: '35 0 * * *'   # publish 1 UTC (survival)
-    - cron: '35 1 * * *'   # publish 2 UTC (supernatural)
-    - cron: '35 5 * * *'   # publish 6 UTC (supernatural)
-    - cron: '05 9 * * *'   # publish 9:30 UTC (survival)
-    - cron: '35 14 * * *'   # publish 15 UTC (survival)
-    - cron: '35 21 * * *'   # publish 22 UTC (survival)
+    - cron: '35 2 * * *'   # publish 3 UTC (supernatural)
+    - cron: '05 3 * * *'   # publish 3:30 UTC (supernatural)
+    - cron: '35 3 * * *'   # publish 4 UTC (survival)
+    - cron: '35 15 * * *'   # publish 16 UTC (supernatural)
+    - cron: '05 16 * * *'   # publish 16:30 UTC (survival)
+    - cron: '35 16 * * *'   # publish 17 UTC (survival)
+    - cron: '05 17 * * *'   # publish 17:30 UTC (supernatural)
   workflow_dispatch:
     inputs:
       category:
@@ -29,13 +29,13 @@ on:
         type: choice
         options:
           - now
-          - '0'
-          - '1'
-          - '2'
-          - '6'
-          - '9:30'
-          - '15'
-          - '22'
+          - '3'
+          - '3:30'
+          - '4'
+          - '16'
+          - '16:30'
+          - '17'
+          - '17:30'
 
 jobs:
   manual:
@@ -87,12 +87,12 @@ jobs:
           fi
           exit $rc
 
-  s0_supernatural:
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 23 * * *' }}
+  s3_supernatural:
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '35 2 * * *' }}
     runs-on: ubuntu-latest
     env:
       CATEGORY: supernatural
-      PUBLISH_HOUR_UTC: '0'
+      PUBLISH_HOUR_UTC: '3'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -136,61 +136,12 @@ jobs:
           fi
           exit $rc
 
-  s1_survival:
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '35 0 * * *' }}
-    runs-on: ubuntu-latest
-    env:
-      CATEGORY: survival
-      PUBLISH_HOUR_UTC: '1'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install runtime
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core fonts-noto-core
-          pip install --quiet -r requirements.txt
-      - name: Inject secrets
-        env:
-          GEMINI: ${{ secrets.GEMINI_API_KEY }}
-          POLL: ${{ secrets.POLLINATIONS_KEY }}
-        run: |
-          python - <<'PY'
-          import json, os
-          cfg = json.load(open('config.json', encoding='utf-8'))
-          cfg['gemini_api_key'] = os.environ.get('GEMINI', '')
-          cfg['pollinations_key'] = os.environ.get('POLL', '')
-          json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
-          print('config ready')
-          PY
-      - name: Generate and upload video (1 retry)
-        env:
-          CF_TOKEN: ${{ secrets.CF_TOKEN }}
-          CF_ACCOUNT: ${{ secrets.CF_ACCOUNT }}
-          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
-          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
-          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-          TTK_CLIENT_KEY: ${{ secrets.TTK_CLIENT_KEY }}
-          TTK_CLIENT_SECRET: ${{ secrets.TTK_CLIENT_SECRET }}
-          TTK_REFRESH_TOKEN: ${{ secrets.TTK_REFRESH_TOKEN }}
-        run: |
-          python pipeline.py
-          rc=$?
-          if [ $rc -ne 0 ]; then
-            echo "::warning::First attempt failed (rc=$rc) - retrying ONCE"
-            python pipeline.py
-            rc=$?
-          fi
-          exit $rc
-
-  s2_supernatural:
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '35 1 * * *' }}
+  s3_30_supernatural:
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '05 3 * * *' }}
     runs-on: ubuntu-latest
     env:
       CATEGORY: supernatural
-      PUBLISH_HOUR_UTC: '2'
+      PUBLISH_HOUR_UTC: '3:30'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -234,12 +185,61 @@ jobs:
           fi
           exit $rc
 
-  s6_supernatural:
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '35 5 * * *' }}
+  s4_survival:
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '35 3 * * *' }}
+    runs-on: ubuntu-latest
+    env:
+      CATEGORY: survival
+      PUBLISH_HOUR_UTC: '4'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install runtime
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core fonts-noto-core
+          pip install --quiet -r requirements.txt
+      - name: Inject secrets
+        env:
+          GEMINI: ${{ secrets.GEMINI_API_KEY }}
+          POLL: ${{ secrets.POLLINATIONS_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os
+          cfg = json.load(open('config.json', encoding='utf-8'))
+          cfg['gemini_api_key'] = os.environ.get('GEMINI', '')
+          cfg['pollinations_key'] = os.environ.get('POLL', '')
+          json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+          print('config ready')
+          PY
+      - name: Generate and upload video (1 retry)
+        env:
+          CF_TOKEN: ${{ secrets.CF_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CF_ACCOUNT }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          TTK_CLIENT_KEY: ${{ secrets.TTK_CLIENT_KEY }}
+          TTK_CLIENT_SECRET: ${{ secrets.TTK_CLIENT_SECRET }}
+          TTK_REFRESH_TOKEN: ${{ secrets.TTK_REFRESH_TOKEN }}
+        run: |
+          python pipeline.py
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo "::warning::First attempt failed (rc=$rc) - retrying ONCE"
+            python pipeline.py
+            rc=$?
+          fi
+          exit $rc
+
+  s16_supernatural:
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '35 15 * * *' }}
     runs-on: ubuntu-latest
     env:
       CATEGORY: supernatural
-      PUBLISH_HOUR_UTC: '6'
+      PUBLISH_HOUR_UTC: '16'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -283,12 +283,12 @@ jobs:
           fi
           exit $rc
 
-  s9_30_survival:
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '05 9 * * *' }}
+  s16_30_survival:
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '05 16 * * *' }}
     runs-on: ubuntu-latest
     env:
       CATEGORY: survival
-      PUBLISH_HOUR_UTC: '9:30'
+      PUBLISH_HOUR_UTC: '16:30'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -332,12 +332,12 @@ jobs:
           fi
           exit $rc
 
-  s15_survival:
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '35 14 * * *' }}
+  s17_survival:
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '35 16 * * *' }}
     runs-on: ubuntu-latest
     env:
       CATEGORY: survival
-      PUBLISH_HOUR_UTC: '15'
+      PUBLISH_HOUR_UTC: '17'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -381,12 +381,12 @@ jobs:
           fi
           exit $rc
 
-  s22_survival:
-    if: ${{ github.event_name == 'schedule' && github.event.schedule == '35 21 * * *' }}
+  s17_30_supernatural:
+    if: ${{ github.event_name == 'schedule' && github.event.schedule == '05 17 * * *' }}
     runs-on: ubuntu-latest
     env:
-      CATEGORY: survival
-      PUBLISH_HOUR_UTC: '22'
+      CATEGORY: supernatural
+      PUBLISH_HOUR_UTC: '17:30'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
