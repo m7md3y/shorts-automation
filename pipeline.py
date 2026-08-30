@@ -107,29 +107,45 @@ GEMINI_MODELS = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.7-flash", "ge
 PEXELS_URL = "https://api.pexels.com/videos/search"
 
 CATEGORIES = {
+    "supernatural": {
+        "name": "Supernatural What If",
+        "name_ar": "خارق للطبيعة",
+        "prompt_suffix": "SUPERNATURAL EXTREME for US viewers: giant Kaiju/dinosaur/lion in space swallows Earth, asteroid hits NYC, moon falls, mega tsunami from space, alien invasion. Must be visually impossible, cinematic Hollywood sci-fi, mind-blowing scale, US landmarks (NYC, Statue of Liberty). End with wow fact, not survival tip. Ideas must be wildly different from each other.",
+        "visual_style": "sci-fi epic, giant creature in space swallowing Earth, NYC skyline, asteroid impact, cinematic volumetric lighting, ultra detailed, Hollywood blockbuster",
+        "tone": "epic, mind-blowing, cinematic, unbelievable",
+        "hashtag": "#whatif #supernatural #giant #scifi",
+    },
+    "survival": {
+        "name": "Survival",
+        "name_ar": "نجاة",
+        "prompt_suffix": "REALISTIC US survival: home invasion by gang at 3AM, tornado rips roof, wildfire surrounds home, bear breaks tent, blizzard traps car, shark circles boat. Must be viscerally real, high-stakes, primal fear for American suburb/family, end with 1 actionable survival tip. Grounded, not fantasy.",
+        "visual_style": "Hollywood thriller, American suburb/forest/ocean/desert, terrified family, tornado fire, emergency gear, cinematic thriller lighting, ultra detailed",
+        "tone": "intense, urgent, cinematic, heart-pounding, American",
+        "hashtag": "#survival #howtosurvive #safety #usastory",
+    },
     "explained": {
         "name": "Survival",
         "name_ar": "نجاة",
-        "prompt_suffix": "EXTREME US-centric survival: home invasion by gang, giant predator / Kaiju eats Earth, asteroid hits NYC, mega-tornado, wildfire, bear/shark attack, blizzard stranding. Each idea MUST be viscerally visual, high-stakes, primal fear for American viewers, and end with 1 actionable survival tip. Think 'what if a giant lion swallowed Earth' level imagination but grounded in survival logic.",
-        "visual_style": "Hollywood thriller, American suburb/forest/ocean/desert, giant creature silhouette, terrified family, tornado fire, emergency gear, cinematic volumetric lighting, ultra detailed",
+        "prompt_suffix": "REALISTIC US survival: home invasion by gang at 3AM, tornado rips roof, wildfire surrounds home, bear breaks tent, blizzard traps car, shark circles boat. Must be viscerally real, high-stakes, primal fear for American suburb/family, end with 1 actionable survival tip. Grounded, not fantasy.",
+        "visual_style": "Hollywood thriller, American suburb/forest/ocean/desert, terrified family, tornado fire, emergency gear, cinematic thriller lighting, ultra detailed",
         "tone": "intense, urgent, cinematic, heart-pounding, American",
-        "hashtag": "#survival #whatif #survivalguide #usastory",
+        "hashtag": "#survival #howtosurvive #safety #usastory",
     },
     "mystery": {
         "name": "Survival",
         "name_ar": "نجاة",
-        "prompt_suffix": "EXTREME US-centric survival: home invasion by gang, giant predator / Kaiju eats Earth, asteroid hits NYC, mega-tornado, wildfire, bear/shark attack, blizzard stranding. Each idea MUST be viscerally visual, high-stakes, primal fear for American viewers, and end with 1 actionable survival tip. Think 'what if a giant lion swallowed Earth' level imagination but grounded in survival logic.",
-        "visual_style": "Hollywood thriller, American suburb/forest/ocean/desert, giant creature silhouette, terrified family, tornado fire, emergency gear, cinematic volumetric lighting, ultra detailed",
+        "prompt_suffix": "REALISTIC US survival: home invasion by gang at 3AM, tornado rips roof, wildfire surrounds home, bear breaks tent, blizzard traps car, shark circles boat. Must be viscerally real, high-stakes, primal fear for American suburb/family, end with 1 actionable survival tip. Grounded, not fantasy.",
+        "visual_style": "Hollywood thriller, American suburb/forest/ocean/desert, terrified family, tornado fire, emergency gear, cinematic thriller lighting, ultra detailed",
         "tone": "intense, urgent, cinematic, heart-pounding, American",
-        "hashtag": "#survival #whatif #survivalguide #usastory",
+        "hashtag": "#survival #howtosurvive #safety #usastory",
     },
     "whatif": {
-        "name": "Survival",
-        "name_ar": "نجاة",
-        "prompt_suffix": "EXTREME US-centric survival: home invasion by gang, giant predator / Kaiju eats Earth, asteroid hits NYC, mega-tornado, wildfire, bear/shark attack, blizzard stranding. Each idea MUST be viscerally visual, high-stakes, primal fear for American viewers, and end with 1 actionable survival tip. Think 'what if a giant lion swallowed Earth' level imagination but grounded in survival logic.",
-        "visual_style": "Hollywood thriller, American suburb/forest/ocean/desert, giant creature silhouette, terrified family, tornado fire, emergency gear, cinematic volumetric lighting, ultra detailed",
-        "tone": "intense, urgent, cinematic, heart-pounding, American",
-        "hashtag": "#survival #whatif #survivalguide #usastory",
+        "name": "Supernatural What If",
+        "name_ar": "خارق للطبيعة",
+        "prompt_suffix": "SUPERNATURAL EXTREME for US viewers: giant Kaiju/dinosaur/lion in space swallows Earth, asteroid hits NYC, moon falls, mega tsunami from space, alien invasion. Must be visually impossible, cinematic Hollywood sci-fi, mind-blowing scale, US landmarks (NYC, Statue of Liberty). End with wow fact, not survival tip. Ideas must be wildly different from each other.",
+        "visual_style": "sci-fi epic, giant creature in space swallowing Earth, NYC skyline, asteroid impact, cinematic volumetric lighting, ultra detailed, Hollywood blockbuster",
+        "tone": "epic, mind-blowing, cinematic, unbelievable",
+        "hashtag": "#whatif #supernatural #giant #scifi",
     },
 }
 
@@ -203,10 +219,18 @@ def script_qc(data, cfg):
     if not any(k in last_sentence for k in ["try", "notice", "next time", "remember", "today", "start", "ask", "watch", "loop", "back", "again", "begin"]):
         pass  # loop ending style - no strict takeaway required
     past = read_json_list("used_scripts.json")
-    for old in past[-30:]:
+    for old in past:
         ratio = difflib.SequenceMatcher(None, full.lower(), old.lower()).ratio()
-        if ratio > 0.6:
+        if ratio > 0.45:
             problems.append(f"too similar to previous script ({ratio:.2f})")
+            break
+    # also check title similarity across entire history
+    past_titles = read_json_list("used_topics.json")
+    title_low = data.get("title","").lower()
+    for old_title in past_titles:
+        tr = difflib.SequenceMatcher(None, title_low, old_title.lower()).ratio()
+        if tr > 0.65:
+            problems.append(f"title too similar to previous ({tr:.2f}): {old_title[:40]}")
             break
     return problems
 
@@ -254,10 +278,12 @@ STYLE: {cat['prompt_suffix']}
 TONE: {cat['tone']}
 TARGET: American audience, American English, US cultural triggers (suburb, 911, family, home, NYC, tornado alley)
 
-Topics already used (never repeat):
+Topics already used (ABSOLUTELY NEVER REPEAT, even slightly similar):
 {titles_str}
 
-STEP 1 — IDEA SELECTION: Brainstorm 10 EXTREME survival/whatif ideas that make a US viewer's heart DROP: home invasion at 3AM, gang surrounds house, giant lion/Kaiju swallows Earth, asteroid hits NYC, mega-tornado rips roof, bear rips tent, shark circles boat, blizzard traps car on highway, wildfire surrounds home. Score each 1-10 on VISUAL POWER + US relatability + novelty + survival teachability. Pick the 10/10 winner.
+CRITICAL RULE: No video may be similar to ANY used topic in entire channel history, even 20% similar. For each of your 10 brainstorm ideas, check against used topics and DISCARD any idea that shares same core scenario, same keywords, or same survival trick. Generate only 100% fresh ideas.
+
+STEP 1 — IDEA SELECTION: Brainstorm 10 ideas STRICTLY in this CATEGORY's style ({cat['name']}): {cat['prompt_suffix']} Each idea must be wildly different from the other 9 and from all used topics. Score each 1-10 on VISUAL POWER + US relatability + novelty. Pick the 10/10 winner that is most unique.
 
 STEP 2 — KILLER HOOKS: Write 8 hooks, each 5-8 words MAX, each a different angle, each starts with power verb/number/shock. Examples: "Gang kicks your door at 3AM" "Giant lion swallows Earth in 60 seconds" "Bear rips tent while you sleep" "Tornado rips roof off instantly". Each must create INSTANT curiosity gap, stop scroll in <1 sec, no weak filler.
 
@@ -1065,14 +1091,14 @@ def main():
         print("MISSING GEMINI KEY: paste into config.json")
         sys.exit(1)
 
-    category_order = ["explained", "mystery", "whatif"]
+    category_order = ["supernatural", "survival", "whatif", "explained", "mystery"]
     env_cat = os.environ.get("CATEGORY", "")
     if env_cat in category_order:
         chosen = env_cat
     else:
         today_cats = read_json_list("today_cats.json")
 
-        if len(today_cats) >= 3:
+        if len(today_cats) >= 7:
             today_cats = []
 
         for cat in category_order:
