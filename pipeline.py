@@ -224,13 +224,21 @@ def script_qc(data, cfg):
         if ratio > 0.45:
             problems.append(f"too similar to previous script ({ratio:.2f})")
             break
-    # also check title similarity across entire history
+    # also check title similarity across entire history (strict)
     past_titles = read_json_list("used_topics.json")
     title_low = data.get("title","").lower()
     for old_title in past_titles:
         tr = difflib.SequenceMatcher(None, title_low, old_title.lower()).ratio()
-        if tr > 0.65:
+        if tr > 0.40:
             problems.append(f"title too similar to previous ({tr:.2f}): {old_title[:40]}")
+            break
+    # hook similarity - must be unique
+    past_hooks = read_json_list("used_hooks.json")
+    hook_low = data.get("hook","").lower()
+    for old_hook in past_hooks:
+        hr = difflib.SequenceMatcher(None, hook_low, old_hook.lower()).ratio()
+        if hr > 0.50:
+            problems.append(f"hook too similar to previous ({hr:.2f}): {old_hook[:40]}")
             break
     return problems
 
@@ -1070,7 +1078,15 @@ def build_video(cfg, data, category="explained"):
         "tags": all_tags[:15],
     }
     (BASE / "output" / f"meta_{ts}.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    # atomic race check - re-read before final commit
+    for old_title in read_json_list("used_topics.json"):
+        if difflib.SequenceMatcher(None, data["title"].lower(), old_title.lower()).ratio() > 0.40:
+            raise RuntimeError(f"race duplicate title: {old_title[:50]}")
+    for old_hook in read_json_list("used_hooks.json"):
+        if difflib.SequenceMatcher(None, data["hook"].lower(), old_hook.lower()).ratio() > 0.50:
+            raise RuntimeError(f"race duplicate hook: {old_hook[:50]}")
     append_json_list("used_topics.json", data["title"])
+    append_json_list("used_hooks.json", data["hook"])
     append_json_list("used_scripts.json", " ".join([data["hook"]] + [s["text"] for s in scenes]))
     state_append({"ts": ts, "title": data["title"], "file": str(final)})
     log(f"DONE: {final}")
@@ -1111,6 +1127,7 @@ def main():
     log(f"=== STARTING CATEGORY: {CATEGORIES[chosen]['name']} ===")
 
     data = None
+    meta = None
     qc_problems = []
     for attempt in range(1, 6):
         try:
@@ -1120,18 +1137,23 @@ def main():
             time.sleep(5 * attempt)
             continue
         qc_problems = script_qc(candidate, cfg)
-        if not qc_problems:
+        if qc_problems:
+            log(f"SCRIPT QC fail (try {attempt}): {qc_problems}")
+            continue
+        try:
+            meta = build_video(cfg, candidate, chosen)
             data = candidate
             break
-        log(f"SCRIPT QC fail (try {attempt}): {qc_problems}")
-    if not data:
+        except Exception as e:
+            log(f"BUILD FAILED: {e}")
+            if "race duplicate" in str(e) and attempt < 5:
+                log("Retrying due to race duplicate...")
+                time.sleep(5)
+                continue
+            sys.exit(3)
+    if not meta:
         log("SKIP RUN: no script passed QC after 5 tries")
         sys.exit(2)
-    try:
-        meta = build_video(cfg, data, chosen)
-    except Exception as e:
-        log(f"BUILD FAILED: {e}")
-        sys.exit(3)
     ok, info = video_qc(pathlib.Path(meta["file"]), cfg)
     if not ok:
         log("UPLOAD BLOCKED BY QC")
