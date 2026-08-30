@@ -293,7 +293,7 @@ CRITICAL RULE: No video may be similar to ANY used topic in entire channel histo
 
 STEP 1 — IDEA SELECTION: Brainstorm 10 ideas STRICTLY in this CATEGORY's style ({cat['name']}): {cat['prompt_suffix']} Each idea must be wildly different from the other 9 and from all used topics. Score each 1-10 on VISUAL POWER + US relatability + novelty. Pick the 10/10 winner that is most unique.
 
-STEP 2 — KILLER HOOKS: Write 8 hooks, each 5-8 words MAX, each a different angle, each starts with power verb/number/shock. Examples: "Gang kicks your door at 3AM" "Giant lion swallows Earth in 60 seconds" "Bear rips tent while you sleep" "Tornado rips roof off instantly". Each must create INSTANT curiosity gap, stop scroll in <1 sec, no weak filler.
+STEP 2 — KILLER HOOKS: Write 8 hooks, each 5-8 words MAX, each a different angle, each starts with power verb/number/shock. Type1: normal What If with fresh new idea. Type2: comedy things that don't happen in reality. No examples - just follow the slogan. Each must create INSTANT curiosity gap, stop scroll in <1 sec, no weak filler.
 
 STEP 3 — SCRIPT: Cinematic survival story: Hook -> escalating danger (3-4 scenes) -> clever survival trick -> 1 actionable safety tip -> loop back to first visual. Every WORD earns the next second: power verbs, concrete sensory details, zero filler, max 15 words per scene.
 
