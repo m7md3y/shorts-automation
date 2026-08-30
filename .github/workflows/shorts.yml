@@ -2,21 +2,23 @@ name: daily-shorts
 
 on:
   schedule:
-    - cron: '25 23 * * *'   # publish 0 UTC (whatif)
-    - cron: '35 0 * * *'   # publish 1 UTC (whatif)
-    - cron: '35 1 * * *'   # publish 2 UTC (whatif)
-    - cron: '35 5 * * *'   # publish 6 UTC (whatif)
-    - cron: '05 9 * * *'   # publish 9:30 UTC (whatif)
-    - cron: '35 14 * * *'   # publish 15 UTC (whatif)
-    - cron: '35 21 * * *'   # publish 22 UTC (whatif)
+    - cron: '25 23 * * *'   # publish 0 UTC (supernatural)
+    - cron: '35 0 * * *'   # publish 1 UTC (survival)
+    - cron: '35 1 * * *'   # publish 2 UTC (supernatural)
+    - cron: '35 5 * * *'   # publish 6 UTC (supernatural)
+    - cron: '05 9 * * *'   # publish 9:30 UTC (survival)
+    - cron: '35 14 * * *'   # publish 15 UTC (survival)
+    - cron: '35 21 * * *'   # publish 22 UTC (survival)
   workflow_dispatch:
     inputs:
       category:
         description: 'Which category to run'
         required: false
-        default: 'whatif'
+        default: 'supernatural'
         type: choice
         options:
+          - supernatural
+          - survival
           - whatif
           - explained
           - mystery
@@ -40,7 +42,7 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     env:
-      CATEGORY: ${{ github.event.inputs.category || 'whatif' }}
+      CATEGORY: ${{ github.event.inputs.category || 'supernatural' }}
       PUBLISH_HOUR_UTC: ${{ github.event.inputs.publish_hour || 'now' }}
     steps:
       - uses: actions/checkout@v4
@@ -85,11 +87,11 @@ jobs:
           fi
           exit $rc
 
-  s0_whatif:
+  s0_supernatural:
     if: ${{ github.event_name == 'schedule' && github.event.schedule == '25 23 * * *' }}
     runs-on: ubuntu-latest
     env:
-      CATEGORY: whatif
+      CATEGORY: supernatural
       PUBLISH_HOUR_UTC: '0'
     steps:
       - uses: actions/checkout@v4
@@ -134,11 +136,11 @@ jobs:
           fi
           exit $rc
 
-  s1_whatif:
+  s1_survival:
     if: ${{ github.event_name == 'schedule' && github.event.schedule == '35 0 * * *' }}
     runs-on: ubuntu-latest
     env:
-      CATEGORY: whatif
+      CATEGORY: survival
       PUBLISH_HOUR_UTC: '1'
     steps:
       - uses: actions/checkout@v4
@@ -183,11 +185,11 @@ jobs:
           fi
           exit $rc
 
-  s2_whatif:
+  s2_supernatural:
     if: ${{ github.event_name == 'schedule' && github.event.schedule == '35 1 * * *' }}
     runs-on: ubuntu-latest
     env:
-      CATEGORY: whatif
+      CATEGORY: supernatural
       PUBLISH_HOUR_UTC: '2'
     steps:
       - uses: actions/checkout@v4
@@ -232,11 +234,11 @@ jobs:
           fi
           exit $rc
 
-  s6_whatif:
+  s6_supernatural:
     if: ${{ github.event_name == 'schedule' && github.event.schedule == '35 5 * * *' }}
     runs-on: ubuntu-latest
     env:
-      CATEGORY: whatif
+      CATEGORY: supernatural
       PUBLISH_HOUR_UTC: '6'
     steps:
       - uses: actions/checkout@v4
@@ -281,11 +283,11 @@ jobs:
           fi
           exit $rc
 
-  s9_30_whatif:
+  s9_30_survival:
     if: ${{ github.event_name == 'schedule' && github.event.schedule == '05 9 * * *' }}
     runs-on: ubuntu-latest
     env:
-      CATEGORY: whatif
+      CATEGORY: survival
       PUBLISH_HOUR_UTC: '9:30'
     steps:
       - uses: actions/checkout@v4
@@ -330,11 +332,11 @@ jobs:
           fi
           exit $rc
 
-  s15_whatif:
+  s15_survival:
     if: ${{ github.event_name == 'schedule' && github.event.schedule == '35 14 * * *' }}
     runs-on: ubuntu-latest
     env:
-      CATEGORY: whatif
+      CATEGORY: survival
       PUBLISH_HOUR_UTC: '15'
     steps:
       - uses: actions/checkout@v4
@@ -379,11 +381,11 @@ jobs:
           fi
           exit $rc
 
-  s22_whatif:
+  s22_survival:
     if: ${{ github.event_name == 'schedule' && github.event.schedule == '35 21 * * *' }}
     runs-on: ubuntu-latest
     env:
-      CATEGORY: whatif
+      CATEGORY: survival
       PUBLISH_HOUR_UTC: '22'
     steps:
       - uses: actions/checkout@v4
