@@ -1125,6 +1125,7 @@ def main():
             chosen = category_order[0]
 
     log(f"=== STARTING CATEGORY: {CATEGORIES[chosen]['name']} ===")
+    preview_only = os.environ.get("PREVIEW_TITLES", "") in ("1", "true")
 
     data = None
     meta = None
@@ -1140,6 +1141,13 @@ def main():
         if qc_problems:
             log(f"SCRIPT QC fail (try {attempt}): {qc_problems}")
             continue
+        if preview_only:
+            # preview mode: save title/hook and exit before images
+            preview = {"title": candidate["title"], "hook": candidate["hook"], "description": candidate["description"], "scenes": candidate["scenes"][:2]}
+            (BASE / f"preview_{chosen}.json").write_text(json.dumps(preview, ensure_ascii=False, indent=2), encoding="utf-8")
+            log(f"PREVIEW TITLE: {candidate['title']}")
+            log(f"PREVIEW HOOK: {candidate['hook']}")
+            sys.exit(0)
         try:
             meta = build_video(cfg, candidate, chosen)
             data = candidate
