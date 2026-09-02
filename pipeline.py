@@ -123,15 +123,8 @@ SUPERNATURAL_SURPRISES = ["confrontation_between_forces","sudden_appearance_chan
 # قائمة كلمات محظورة من الإفراط (Overuse Blacklist) - تُملأ ديناميكياً
 OVERUSE_BLACKLIST = []
 
-CATEGORIES = {
-    "survival": {"name": "Survival", "name_ar": "نجاة", "type": "survival"},
-    "supernatural": {"name": "Supernatural Encounter", "name_ar": "مواجهة خارقة", "type": "supernatural"},
-    # aliases for backward compat - all map to survival/supernatural via rotation engine
-    "whatif": {"name": "Supernatural Encounter", "name_ar": "مواجهة خارقة", "type": "supernatural"},
-    "explained": {"name": "Survival", "name_ar": "نجاة", "type": "survival"},
-    "mystery": {"name": "Survival", "name_ar": "نجاة", "type": "survival"},
-}
-BANNED_PATTERNS = []
+CATEGORIES = {}  # DELETED
+BANNED_PATTERNS = []  # DELETED
 
 def load_ledger():
     p = BASE / CONTENT_LEDGER
@@ -275,81 +268,13 @@ def script_qc(data, cfg):
 
 
 def pick_best_hook(api_key, title, scenes_summary, candidates):
-    # DELETED - awaiting new instructions
+    # DELETED
     return candidates[0] if candidates else ""
 
 
 def gemini_script(api_key, niche, category="explained"):
-    # Section 0.2 + Section 2.4 - strict no-repeat, 3 hooks, scene breakdown
-    ledger = load_ledger()
-    recent_titles = [e.get("title","") for e in ledger[-150:]]
-    titles_block = "\n".join(f"- {t}" for t in recent_titles) if recent_titles else "none"
-    # Category rotation - pick subcategory not used recently
-    main_type = CATEGORIES.get(category, CATEGORIES["survival"]).get("type", "survival")
-    subcategory = category_rotation_engine(main_type)
-    # Overuse blacklist check words
-    recent_titles_str = " | ".join(recent_titles[-20:])
-    # Build prompt per Section 2.4
-    cat = CATEGORIES.get(category, CATEGORIES["survival"])
-    # Video length 30-45 sec => 66-117 words at 2.2-2.6 wps
-    target_words = random.randint(75, 105)
-    prompt = f"""You are the world's #1 US Shorts writer. Audience: American primary, British secondary.
-
-CATEGORY: {cat['name']} | SUBCATEGORY: {subcategory}
-STYLE: {cat.get('prompt_suffix','')}
-TONE: {cat.get('tone','')}
-NICHE: {niche}
-TARGET WORDS: {target_words} words for 30-45 sec video (2.2-2.6 wps)
-
-ALL PREVIOUS TITLES (150) - YOU MUST NOT REPEAT ANY CORE IDEA:
-{titles_block}
-
-CRITICAL: Any new idea sharing same core situation as any title above, even paraphrased, is FORBIDDEN. If you think of an idea whose core can be summarized to same sentence as any above, DISCARD and find a completely different one.
-
-RECENT TITLES (20) for overuse check: {recent_titles_str}
-Do not overuse any word appearing 4+ times in recent 20.
-
-TASK:
-1. First, write 3 HOOK options, each 1-2 sentences, 5-10 words each, each a different syntactic structure (question / shocking statement / direct command / numbered list). Each must: curiosity gap, in medias res, specific number/fact if possible, sync with first visual, short, and pass the stop-scroll test. Evaluate them and pick the strongest. Do not use template "Imagine/What if/Have you ever" repeatedly.
-2. Then write the full script: Hook (1-2 sentences) -> Escalation (each sentence higher tension, no filler like "now let's see") -> Climax -> Ending (practical tip for survival / witty final shot for supernatural). Use "You" heavily, American English simple, 5-10 words per sentence, zero filler.
-3. Split into 6-10 scenes, each 1-2 sentences max, with for each scene: precise visual description (for Flux), camera movement type (slow zoom-in / zoom-out / pan), and mood.
-
-Return ONLY valid JSON:
-{{
-  "title": "Title under 70 chars, curiosity gap with hook, important words first, no clickbait mismatch",
-  "description": "Sentence 1 with main keyword. Sentence 2 with synonyms. + 3-5 relevant hashtags. + simple CTA question.",
-  "tags": ["5-8 lowercase tags, mix broad and specific, truthful"],
-  "core_idea": "2-3 sentence summary of core situation for ledger",
-  "hook": "chosen hook",
-  "hook_candidates": ["3 hooks you evaluated"],
-  "hook_structure": "question|statement|command|numbered",
-  "scenes": [{{"text": " narration 5-10 words", "visuals": ["concrete visual 1"], "overlays": [], "camera": "zoom-in|zoom-out|pan", "mood": "tension|awe"}}],
-  "visual_elements": {{"place": "e.g. NYC Times Square", "entity": "e.g. dragon", "palette": "e.g. cold blue", "camera_hook": "e.g. low angle"}},
-  "subcategory": "{subcategory}",
-  "main_type": "{main_type}"
-}}
-"""
-    body = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.95, "responseMimeType": "application/json", "maxOutputTokens": 3000}}
-    for model in GEMINI_MODELS:
-        try:
-            r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent", params={"key": api_key}, json=body, timeout=90)
-            if r.ok:
-                data = json.loads(r.json()["candidates"][0]["content"]["parts"][0]["text"])
-                # Similarity gate
-                ok, conflict = similarity_gate(data.get("title",""), data.get("core_idea",""))
-                if not ok:
-                    log(f"Similarity gate reject: {data.get('title')} similar to {conflict.get('title')}")
-                    continue
-                ok2, word = overuse_blacklist_check(data.get("title",""))
-                if not ok2:
-                    log(f"Overuse blacklist reject word: {word}")
-                    continue
-                log(f"SCRIPT via {model} [{cat['name']}] subcategory {subcategory}")
-                return data
-        except Exception as e:
-            log(f"  {model}: {e}")
-            time.sleep(2)
-    raise RuntimeError("all gemini models failed or rejected by gates")
+    # DELETED
+    raise RuntimeError("deleted")
 
 def fetch_openverse(query, out_path):
     try:
@@ -508,11 +433,9 @@ ENHANCE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.
 _enh_cache = {}
 
 
-def enhance_prompt(query, scene_text, topic, style_lock, mood):
-    # Section 4.2 - 7 mandatory components + style lock
-    api_key = load_config().get("gemini_api_key", "")
-    if not api_key:
-        return query
+def enhance_prompt(query, scene_text, topic):
+    # DELETED
+    return query
     instruction = f"""You are a Flux prompt engineer for vertical 9:16 Shorts. Convert this scene to a Flux prompt.
 
 SCENE TEXT: {scene_text}
