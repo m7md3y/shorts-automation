@@ -106,8 +106,89 @@ GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5
 GEMINI_MODELS = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-3-flash-preview", "gemini-3.5-flash-lite"]
 PEXELS_URL = "https://api.pexels.com/videos/search"
 
-CATEGORIES = {}  # DELETED - awaiting new instructions
-BANNED_PATTERNS = []  # DELETED
+# === القسم صفر + القسم 1: Content Ledger + الفئات الفرعية ===
+CONTENT_LEDGER = "content_ledger.json"  # قاعدة البيانات الدائمة
+
+# الفئة الرئيسية: نجاة (Section 1.2) - 3 أبعاد
+SURVIVAL_THREATS = ["natural_disaster","human_threat","environmental_tech","urban_collective","rare_curiosity"]
+SURVIVAL_CONTEXTS = ["night_deep_sleep","isolated_home","high_building","remote_no_signal","alone_with_child","injured_no_tools","time_pressure_multi_threat","exit_blocked"]
+SURVIVAL_RESOLUTIONS = ["unexpected_tool","scientific_knowledge","quick_decisions","environment_exploitation"]
+
+# الفئة الرئيسية: مواجهة خارقة (Section 1.3) - 3 أبعاد
+SUPERNATURAL_ENTITIES = ["mythical_creature","astronomical","reversed_nature","folklore_entity"]
+SUPERNATURAL_PLACES_US = ["NYC_TimesSquare","NYC_CentralPark","NYC_BrooklynBridge","LA_Hollywood","LasVegas","Chicago","SanFrancisco_GoldenGate","WashingtonDC","Miami"]
+SUPERNATURAL_PLACES_UK = ["London_BigBen","London_TowerBridge","Edinburgh"]
+SUPERNATURAL_SURPRISES = ["confrontation_between_forces","sudden_appearance_changes_place","population_reaction_irony"]
+
+# قائمة كلمات محظورة من الإفراط (Overuse Blacklist) - تُملأ ديناميكياً
+OVERUSE_BLACKLIST = []
+
+CATEGORIES = {
+    "survival": {"name": "Survival", "name_ar": "نجاة", "type": "survival"},
+    "supernatural": {"name": "Supernatural Encounter", "name_ar": "مواجهة خارقة", "type": "supernatural"},
+    # aliases for backward compat - all map to survival/supernatural via rotation engine
+    "whatif": {"name": "Supernatural Encounter", "name_ar": "مواجهة خارقة", "type": "supernatural"},
+    "explained": {"name": "Survival", "name_ar": "نجاة", "type": "survival"},
+    "mystery": {"name": "Survival", "name_ar": "نجاة", "type": "survival"},
+}
+BANNED_PATTERNS = []
+
+def load_ledger():
+    p = BASE / CONTENT_LEDGER
+    if p.exists():
+        try: return json.loads(p.read_text(encoding="utf-8"))
+        except: return []
+    return []
+
+def save_ledger_entry(entry):
+    ledger = load_ledger()
+    ledger.append(entry)
+    (BASE / CONTENT_LEDGER).write_text(json.dumps(ledger, ensure_ascii=False, indent=2), encoding="utf-8")
+
+def similarity_gate(new_title, new_core, threshold=0.62):
+    ledger = load_ledger()
+    for e in ledger:
+        for field in [e.get("title",""), e.get("core_idea","")]:
+            if not field: continue
+            r = difflib.SequenceMatcher(None, new_title.lower(), field.lower()).ratio()
+            rc = difflib.SequenceMatcher(None, new_core.lower(), e.get("core_idea","").lower()).ratio()
+            if max(r, rc) > threshold:
+                return False, e
+    return True, None
+
+def category_rotation_engine(main_type):
+    ledger = load_ledger()
+    # find last used subcategory of same main type
+    last_sub = None
+    for e in reversed(ledger):
+        if e.get("main_type") == main_type:
+            last_sub = e.get("subcategory")
+            break
+    # build all subcategories for this main type
+    if main_type == "survival":
+        all_subs = [f"{t}|{c}|{r}" for t in SURVIVAL_THREATS for c in SURVIVAL_CONTEXTS for r in SURVIVAL_RESOLUTIONS]
+    else:
+        all_subs = [f"{en}|{pl}|{su}" for en in SUPERNATURAL_ENTITIES for pl in (SUPERNATURAL_PLACES_US+SUPERNATURAL_PLACES_UK) for su in SUPERNATURAL_SURPRISES]
+    # avoid last used and avoid used today
+    today = time.strftime("%Y-%m-%d")
+    today_subs = [e.get("subcategory") for e in ledger if e.get("date","").startswith(today) and e.get("main_type")==main_type]
+    for _ in range(20):
+        cand = random.choice(all_subs)
+        if cand == last_sub: continue
+        if cand in today_subs: continue
+        return cand
+    return random.choice(all_subs)
+
+def overuse_blacklist_check(title):
+    ledger = load_ledger()
+    recent = [e.get("title","").lower() for e in ledger[-20:]]
+    words = re.findall(r"\b\w+\b", title.lower())
+    for w in set(words):
+        if len(w) < 4: continue
+        cnt = sum(w in t for t in recent)
+        if cnt >= 4:  # word appears in 4/20 recent titles
+            return False, w
+    return True, None
 
 
 class RunLog:
@@ -199,8 +280,76 @@ def pick_best_hook(api_key, title, scenes_summary, candidates):
 
 
 def gemini_script(api_key, niche, category="explained"):
-    # DELETED - awaiting new instructions
-    raise RuntimeError("gemini_script deleted")
+    # Section 0.2 + Section 2.4 - strict no-repeat, 3 hooks, scene breakdown
+    ledger = load_ledger()
+    recent_titles = [e.get("title","") for e in ledger[-150:]]
+    titles_block = "\n".join(f"- {t}" for t in recent_titles) if recent_titles else "none"
+    # Category rotation - pick subcategory not used recently
+    main_type = CATEGORIES.get(category, CATEGORIES["survival"]).get("type", "survival")
+    subcategory = category_rotation_engine(main_type)
+    # Overuse blacklist check words
+    recent_titles_str = " | ".join(recent_titles[-20:])
+    # Build prompt per Section 2.4
+    cat = CATEGORIES.get(category, CATEGORIES["survival"])
+    # Video length 30-45 sec => 66-117 words at 2.2-2.6 wps
+    target_words = random.randint(75, 105)
+    prompt = f"""You are the world's #1 US Shorts writer. Audience: American primary, British secondary.
+
+CATEGORY: {cat['name']} | SUBCATEGORY: {subcategory}
+STYLE: {cat.get('prompt_suffix','')}
+TONE: {cat.get('tone','')}
+NICHE: {niche}
+TARGET WORDS: {target_words} words for 30-45 sec video (2.2-2.6 wps)
+
+ALL PREVIOUS TITLES (150) - YOU MUST NOT REPEAT ANY CORE IDEA:
+{titles_block}
+
+CRITICAL: Any new idea sharing same core situation as any title above, even paraphrased, is FORBIDDEN. If you think of an idea whose core can be summarized to same sentence as any above, DISCARD and find a completely different one.
+
+RECENT TITLES (20) for overuse check: {recent_titles_str}
+Do not overuse any word appearing 4+ times in recent 20.
+
+TASK:
+1. First, write 3 HOOK options, each 1-2 sentences, 5-10 words each, each a different syntactic structure (question / shocking statement / direct command / numbered list). Each must: curiosity gap, in medias res, specific number/fact if possible, sync with first visual, short, and pass the stop-scroll test. Evaluate them and pick the strongest. Do not use template "Imagine/What if/Have you ever" repeatedly.
+2. Then write the full script: Hook (1-2 sentences) -> Escalation (each sentence higher tension, no filler like "now let's see") -> Climax -> Ending (practical tip for survival / witty final shot for supernatural). Use "You" heavily, American English simple, 5-10 words per sentence, zero filler.
+3. Split into 6-10 scenes, each 1-2 sentences max, with for each scene: precise visual description (for Flux), camera movement type (slow zoom-in / zoom-out / pan), and mood.
+
+Return ONLY valid JSON:
+{{
+  "title": "Title under 70 chars, curiosity gap with hook, important words first, no clickbait mismatch",
+  "description": "Sentence 1 with main keyword. Sentence 2 with synonyms. + 3-5 relevant hashtags. + simple CTA question.",
+  "tags": ["5-8 lowercase tags, mix broad and specific, truthful"],
+  "core_idea": "2-3 sentence summary of core situation for ledger",
+  "hook": "chosen hook",
+  "hook_candidates": ["3 hooks you evaluated"],
+  "hook_structure": "question|statement|command|numbered",
+  "scenes": [{{"text": " narration 5-10 words", "visuals": ["concrete visual 1"], "overlays": [], "camera": "zoom-in|zoom-out|pan", "mood": "tension|awe"}}],
+  "visual_elements": {{"place": "e.g. NYC Times Square", "entity": "e.g. dragon", "palette": "e.g. cold blue", "camera_hook": "e.g. low angle"}},
+  "subcategory": "{subcategory}",
+  "main_type": "{main_type}"
+}}
+"""
+    body = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.95, "responseMimeType": "application/json", "maxOutputTokens": 3000}}
+    for model in GEMINI_MODELS:
+        try:
+            r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent", params={"key": api_key}, json=body, timeout=90)
+            if r.ok:
+                data = json.loads(r.json()["candidates"][0]["content"]["parts"][0]["text"])
+                # Similarity gate
+                ok, conflict = similarity_gate(data.get("title",""), data.get("core_idea",""))
+                if not ok:
+                    log(f"Similarity gate reject: {data.get('title')} similar to {conflict.get('title')}")
+                    continue
+                ok2, word = overuse_blacklist_check(data.get("title",""))
+                if not ok2:
+                    log(f"Overuse blacklist reject word: {word}")
+                    continue
+                log(f"SCRIPT via {model} [{cat['name']}] subcategory {subcategory}")
+                return data
+        except Exception as e:
+            log(f"  {model}: {e}")
+            time.sleep(2)
+    raise RuntimeError("all gemini models failed or rejected by gates")
 
 def fetch_openverse(query, out_path):
     try:
@@ -359,8 +508,40 @@ ENHANCE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.
 _enh_cache = {}
 
 
-def enhance_prompt(query, scene_text, topic):
-    # DELETED - awaiting new instructions
+def enhance_prompt(query, scene_text, topic, style_lock, mood):
+    # Section 4.2 - 7 mandatory components + style lock
+    api_key = load_config().get("gemini_api_key", "")
+    if not api_key:
+        return query
+    instruction = f"""You are a Flux prompt engineer for vertical 9:16 Shorts. Convert this scene to a Flux prompt.
+
+SCENE TEXT: {scene_text}
+RAW VISUAL: {query}
+TOPIC: {topic}
+STYLE LOCK: {style_lock}
+MOOD: {mood}
+
+Build a Flux prompt with EXACTLY these 7 components:
+1. Subject & precise action (who/what doing what)
+2. Camera angle (choose one: extreme close-up / close-up / medium shot / wide shot / low angle / bird's eye) - MUST specify
+3. Lighting source/mood (cold blue for night tension / warm red-orange for explosions / dramatic chiaroscuro / cosmic glow for supernatural)
+4. Style lock words (same for all scenes in this video): {style_lock}
+5. Dimensions: vertical 9:16
+6. Mood: {mood}
+7. Negative prompt: no deformed hands/faces, no garbled text, no wrong anatomy, no flat empty background
+
+Also keep visual consistency: if same character/creature appears across scenes, use identical description.
+Output ONLY the final prompt text, 60-110 words."""
+    body = {"contents": [{"parts": [{"text": instruction}]}], "generationConfig": {"temperature": 0.7, "maxOutputTokens": 600}}
+    for model in GEMINI_MODELS:
+        try:
+            r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent", params={"key": api_key}, json=body, timeout=60)
+            if r.ok:
+                txt = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip().strip('"')
+                if 40 < len(txt) < 900:
+                    return txt
+        except: pass
+        time.sleep(1)
     return query
 
 
@@ -772,6 +953,7 @@ def build_video(cfg, data, category="explained"):
 
     visuals = []
     topic = data.get("title", "")
+    style_lock = "cinematic, photorealistic, hyper-detailed, dramatic lighting, film grain, 8k"
     first_scene_img = None
 
     for i, it in enumerate(items):
@@ -786,7 +968,7 @@ def build_video(cfg, data, category="explained"):
                     src = clip
             if src is None:
                 img = run_dir / f"img_{i:02d}_{j}.jpg"
-                rich_q = enhance_prompt(q, scene_txt, topic)
+                rich_q = enhance_prompt(q, scene_txt, topic, style_lock, scene.get("mood","tension"))
                 for attempt in range(3):
                     if gen_image_smart(rich_q, img, random.randint(1, 10 ** 6)) and verify_image(img):
                         src = img
@@ -802,7 +984,7 @@ def build_video(cfg, data, category="explained"):
         for j, q in enumerate(it.get("overlays", [])[:1]):
             ov_path = run_dir / f"ov_{i:02d}_{j}.jpg"
             log(f"[ASSET {i + 1}/{n}] overlay: {q}")
-            rich_q = enhance_prompt(q, scene_txt, topic)
+            rich_q = enhance_prompt(q, scene_txt, topic, style_lock, scene.get("mood","tension"))
             ok = False
             for attempt in range(3):
                 if gen_overlay_image(rich_q, ov_path, random.randint(1, 10 ** 6)) and ov_path.exists() and ov_path.stat().st_size > 15000:
@@ -904,6 +1086,7 @@ def build_video(cfg, data, category="explained"):
     append_json_list("used_topics.json", data["title"])
     append_json_list("used_hooks.json", data["hook"])
     append_json_list("used_scripts.json", " ".join([data["hook"]] + [s["text"] for s in scenes]))
+    save_ledger_entry({"date": time.strftime("%Y-%m-%d %H:%M:%S"), "title": data["title"], "core_idea": data.get("core_idea",""), "full_text": " ".join([data["hook"]] + [s["text"] for s in scenes]), "main_type": data.get("main_type", chosen), "subcategory": data.get("subcategory",""), "visual_elements": data.get("visual_elements", {}), "hook_structure": data.get("hook_structure",""), "performance": {"views": 0, "avg_view_duration": 0, "likes": 0}})
     state_append({"ts": ts, "title": data["title"], "file": str(final)})
     log(f"DONE: {final}")
     return meta
