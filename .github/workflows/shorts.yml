@@ -75,6 +75,12 @@ jobs:
           json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
           print('config ready')
           PY
+      - name: Check start date (no publish before Sept 3)
+        run: |
+          if [ "$(date -u +%Y-%m-%d)" \< "2026-09-03" ]; then
+            echo "Before 2026-09-03, skipping scheduled publish"
+            exit 78
+          fi
       - name: Generate and upload video (1 retry)
         env:
           CF_TOKEN: ${{ secrets.CF_TOKEN }}
@@ -124,6 +130,12 @@ jobs:
           json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
           print('config ready')
           PY
+      - name: Check start date (no publish before Sept 3)
+        run: |
+          if [ "$(date -u +%Y-%m-%d)" \< "2026-09-03" ]; then
+            echo "Before 2026-09-03, skipping scheduled publish"
+            exit 78
+          fi
       - name: Generate and upload video (1 retry)
         env:
           CF_TOKEN: ${{ secrets.CF_TOKEN }}
@@ -173,6 +185,12 @@ jobs:
           json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
           print('config ready')
           PY
+      - name: Check start date (no publish before Sept 3)
+        run: |
+          if [ "$(date -u +%Y-%m-%d)" \< "2026-09-03" ]; then
+            echo "Before 2026-09-03, skipping scheduled publish"
+            exit 78
+          fi
       - name: Generate and upload video (1 retry)
         env:
           CF_TOKEN: ${{ secrets.CF_TOKEN }}
@@ -222,6 +240,12 @@ jobs:
           json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
           print('config ready')
           PY
+      - name: Check start date (no publish before Sept 3)
+        run: |
+          if [ "$(date -u +%Y-%m-%d)" \< "2026-09-03" ]; then
+            echo "Before 2026-09-03, skipping scheduled publish"
+            exit 78
+          fi
       - name: Generate and upload video (1 retry)
         env:
           CF_TOKEN: ${{ secrets.CF_TOKEN }}
@@ -271,6 +295,12 @@ jobs:
           json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
           print('config ready')
           PY
+      - name: Check start date (no publish before Sept 3)
+        run: |
+          if [ "$(date -u +%Y-%m-%d)" \< "2026-09-03" ]; then
+            echo "Before 2026-09-03, skipping scheduled publish"
+            exit 78
+          fi
       - name: Generate and upload video (1 retry)
         env:
           CF_TOKEN: ${{ secrets.CF_TOKEN }}
@@ -320,6 +350,12 @@ jobs:
           json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
           print('config ready')
           PY
+      - name: Check start date (no publish before Sept 3)
+        run: |
+          if [ "$(date -u +%Y-%m-%d)" \< "2026-09-03" ]; then
+            echo "Before 2026-09-03, skipping scheduled publish"
+            exit 78
+          fi
       - name: Generate and upload video (1 retry)
         env:
           CF_TOKEN: ${{ secrets.CF_TOKEN }}
@@ -369,6 +405,12 @@ jobs:
           json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
           print('config ready')
           PY
+      - name: Check start date (no publish before Sept 3)
+        run: |
+          if [ "$(date -u +%Y-%m-%d)" \< "2026-09-03" ]; then
+            echo "Before 2026-09-03, skipping scheduled publish"
+            exit 78
+          fi
       - name: Generate and upload video (1 retry)
         env:
           CF_TOKEN: ${{ secrets.CF_TOKEN }}
@@ -418,6 +460,12 @@ jobs:
           json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
           print('config ready')
           PY
+      - name: Check start date (no publish before Sept 3)
+        run: |
+          if [ "$(date -u +%Y-%m-%d)" \< "2026-09-03" ]; then
+            echo "Before 2026-09-03, skipping scheduled publish"
+            exit 78
+          fi
       - name: Generate and upload video (1 retry)
         env:
           CF_TOKEN: ${{ secrets.CF_TOKEN }}
@@ -467,6 +515,12 @@ jobs:
           json.dump(cfg, open('config.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
           print('config ready')
           PY
+      - name: Check start date (no publish before Sept 3)
+        run: |
+          if [ "$(date -u +%Y-%m-%d)" \< "2026-09-03" ]; then
+            echo "Before 2026-09-03, skipping scheduled publish"
+            exit 78
+          fi
       - name: Generate and upload video (1 retry)
         env:
           CF_TOKEN: ${{ secrets.CF_TOKEN }}
