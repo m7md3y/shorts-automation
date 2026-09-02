@@ -106,58 +106,8 @@ GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5
 GEMINI_MODELS = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-3-flash-preview", "gemini-3.5-flash-lite"]
 PEXELS_URL = "https://api.pexels.com/videos/search"
 
-CATEGORIES = {
-    "supernatural": {
-        "name": "Supernatural What If",
-        "name_ar": "خارق للطبيعة",
-        "prompt_suffix": "SUPERNATURAL EXTREME for US viewers: giant Kaiju/dinosaur/lion in space swallows Earth, asteroid hits NYC, moon falls, mega tsunami from space, alien invasion. Must be visually impossible, cinematic Hollywood sci-fi, mind-blowing scale, US landmarks (NYC, Statue of Liberty). End with wow fact, not survival tip. Ideas must be wildly different from each other.",
-        "visual_style": "sci-fi epic, giant creature in space swallowing Earth, NYC skyline, asteroid impact, cinematic volumetric lighting, ultra detailed, Hollywood blockbuster",
-        "tone": "epic, mind-blowing, cinematic, unbelievable",
-        "hashtag": "#whatif #supernatural #giant #scifi",
-    },
-    "survival": {
-        "name": "Survival",
-        "name_ar": "نجاة",
-        "prompt_suffix": "REALISTIC US survival: home invasion by gang at 3AM, tornado rips roof, wildfire surrounds home, bear breaks tent, blizzard traps car, shark circles boat. Must be viscerally real, high-stakes, primal fear for American suburb/family, end with 1 actionable survival tip. Grounded, not fantasy.",
-        "visual_style": "Hollywood thriller, American suburb/forest/ocean/desert, terrified family, tornado fire, emergency gear, cinematic thriller lighting, ultra detailed",
-        "tone": "intense, urgent, cinematic, heart-pounding, American",
-        "hashtag": "#survival #howtosurvive #safety #usastory",
-    },
-    "explained": {
-        "name": "Survival",
-        "name_ar": "نجاة",
-        "prompt_suffix": "REALISTIC US survival: home invasion by gang at 3AM, tornado rips roof, wildfire surrounds home, bear breaks tent, blizzard traps car, shark circles boat. Must be viscerally real, high-stakes, primal fear for American suburb/family, end with 1 actionable survival tip. Grounded, not fantasy.",
-        "visual_style": "Hollywood thriller, American suburb/forest/ocean/desert, terrified family, tornado fire, emergency gear, cinematic thriller lighting, ultra detailed",
-        "tone": "intense, urgent, cinematic, heart-pounding, American",
-        "hashtag": "#survival #howtosurvive #safety #usastory",
-    },
-    "mystery": {
-        "name": "Survival",
-        "name_ar": "نجاة",
-        "prompt_suffix": "REALISTIC US survival: home invasion by gang at 3AM, tornado rips roof, wildfire surrounds home, bear breaks tent, blizzard traps car, shark circles boat. Must be viscerally real, high-stakes, primal fear for American suburb/family, end with 1 actionable survival tip. Grounded, not fantasy.",
-        "visual_style": "Hollywood thriller, American suburb/forest/ocean/desert, terrified family, tornado fire, emergency gear, cinematic thriller lighting, ultra detailed",
-        "tone": "intense, urgent, cinematic, heart-pounding, American",
-        "hashtag": "#survival #howtosurvive #safety #usastory",
-    },
-    "whatif": {
-        "name": "Supernatural What If",
-        "name_ar": "خارق للطبيعة",
-        "prompt_suffix": "SUPERNATURAL EXTREME for US viewers: giant Kaiju/dinosaur/lion in space swallows Earth, asteroid hits NYC, moon falls, mega tsunami from space, alien invasion. Must be visually impossible, cinematic Hollywood sci-fi, mind-blowing scale, US landmarks (NYC, Statue of Liberty). End with wow fact, not survival tip. Ideas must be wildly different from each other.",
-        "visual_style": "sci-fi epic, giant creature in space swallowing Earth, NYC skyline, asteroid impact, cinematic volumetric lighting, ultra detailed, Hollywood blockbuster",
-        "tone": "epic, mind-blowing, cinematic, unbelievable",
-        "hashtag": "#whatif #supernatural #giant #scifi",
-    },
-}
-
-BANNED_PATTERNS = [
-    r"you won'?t believe",
-    r"doctors hate",
-    r"goes viral",
-    r"\bguaranteed\b",
-    r"\d{1,3}\s?%",
-    r"study (shows|proves|found)",
-    r"scientists (hate|found)",
-]
+CATEGORIES = {}  # DELETED - awaiting new instructions
+BANNED_PATTERNS = []  # DELETED
 
 
 class RunLog:
@@ -244,107 +194,13 @@ def script_qc(data, cfg):
 
 
 def pick_best_hook(api_key, title, scenes_summary, candidates):
-    cands = "\n".join(f"{n + 1}. {c}" for n, c in enumerate(candidates))
-    prompt = f"""You are a ruthless US survival Shorts retention expert. Video title: {title}
-Story: {scenes_summary}
-
-Hook candidates:
-{cands}
-
-Score each hook 1-10 on: instant curiosity gap for US viewer, primal fear trigger, stop-scroll power in <1 sec, simplicity (5-8 words), US relatability, truthfulness.
-Penalize weak/filler/overlong hooks. Think briefly, then answer with ONLY the NUMBER of the winner."""
-    body = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 800, "thinkingConfig": {"thinkingBudget": 0}},
-    }
-    for model in GEMINI_MODELS:
-        try:
-            r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-                params={"key": api_key}, json=body, timeout=90)
-            if r.ok:
-                txt = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-                m = re.search(r"\b(\d+)\b", txt)
-                if m:
-                    idx = int(m.group(1)) - 1
-                    if 0 <= idx < len(candidates):
-                        return candidates[idx]
-        except Exception as e:
-            log(f"  hook-judge {model}: {e}")
-        time.sleep(2)
-    return candidates[0]
+    # DELETED - awaiting new instructions
+    return candidates[0] if candidates else ""
 
 
 def gemini_script(api_key, niche, category="explained"):
-    used_titles = read_json_list("used_topics.json")
-    titles_str = "\n".join(used_titles[-40:]) if used_titles else "none"
-    cat = CATEGORIES.get(category, CATEGORIES["explained"])
-
-    prompt = f"""You are the world's #1 YouTube Shorts writer for the US market. Your survival scripts generated billions of views. You weaponize primal fear + curiosity for American viewers.
-
-CATEGORY: {cat['name']} ({cat['name_ar']})
-STYLE: {cat['prompt_suffix']}
-TONE: {cat['tone']}
-TARGET: American audience, American English, US cultural triggers (suburb, 911, family, home, NYC, tornado alley)
-
-Topics already used (ABSOLUTELY NEVER REPEAT, even slightly similar):
-{titles_str}
-
-CRITICAL RULE: No video may be similar to ANY used topic in entire channel history, even 20% similar. For each of your 10 brainstorm ideas, check against used topics and DISCARD any idea that shares same core scenario, same keywords, or same survival trick. Generate only 100% fresh ideas.
-
-STEP 1 — IDEA SELECTION: Brainstorm 10 ideas STRICTLY in this CATEGORY's style ({cat['name']}): {cat['prompt_suffix']} Each idea must be wildly different from the other 9 and from all used topics. Score each 1-10 on VISUAL POWER + US relatability + novelty. Pick the 10/10 winner that is most unique.
-
-STEP 2 — KILLER HOOKS: Write 8 hooks, each 5-8 words MAX, each a different angle, each starts with power verb/number/shock. Type1: normal What If with fresh new idea. Type2: comedy things that don't happen in reality. No examples - just follow the slogan. Each must create INSTANT curiosity gap, stop scroll in <1 sec, no weak filler.
-
-STEP 3 — SCRIPT: Cinematic survival story: Hook -> escalating danger (3-4 scenes) -> clever survival trick -> 1 actionable safety tip -> loop back to first visual. Every WORD earns the next second: power verbs, concrete sensory details, zero filler, max 15 words per scene.
-
-Return ONLY valid JSON exactly like:
-{{
-  "title": "How to Survive ... / What If ... under 70 chars, starts with search keyword",
-  "description": "2 keyword-rich sentences for US search + exactly 4 hashtags",
-  "tags": ["survival", "how to survive", "what if", "us survival", "safety tips", "shorts"],
-  "hook": "your single best hook (also in hook_candidates)",
-  "hook_candidates": ["8 hooks, each 5-8 words, different angle, US primal fear"],
-  "scenes": [
-    {{"text": "narration max 15 words, punchy", "visuals": ["ultra-concrete cinematic visual 1", "visual 2"], "overlays": []}}
-  ]
-}}
-
-STRICT RULES - EVERY WORD CRAFTED:
-- Hooks: 5-8 words, punchy, US primal fear, power verb first, instant stop-scroll.
-- Title: SEO for US search, starts with "How to Survive" or "What If", <70 chars.
-- Scenes: 6-10, total words 90-150, each scene text max 15 words.
-- Visuals per scene: 1-3 ULTRA-concrete Hollywood-thriller queries that ILLUSTRATE EXACTLY the narration (if text says "gang kicks door", visual MUST be "close-up masked gang member kicking American suburban front door at night, porch light flickering").
-- Visual style: photorealistic, cinematic, American setting, volumetric lighting, ultra detailed - must match narration emotion word-for-word.
-- LAST scene visual concept = FIRST scene (loop ending).
-- scenes[0].text must CONTINUE after the hook (no repeat).
-- Use straight apostrophes only.
-- Tags: 5-8 lowercase US search terms.
-- No fabricated stats/medical claims.
-- {cat['prompt_suffix']}"""
-    body = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 1.05, "responseMimeType": "application/json"},
-    }
-    for model in GEMINI_MODELS:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-        try:
-            r = requests.post(url, params={"key": api_key}, json=body, timeout=90)
-            if r.ok:
-                data = json.loads(r.json()["candidates"][0]["content"]["parts"][0]["text"])
-                log(f"SCRIPT via {model} [{cat['name']}]")
-                break
-        except Exception as e:
-            log(f"  {model}: {e}")
-            time.sleep(3)
-    else:
-        raise RuntimeError("all gemini models failed")
-    cands = data.get("hook_candidates") or []
-    if len(cands) >= 3:
-        summary = " ".join(s.get("text", "") for s in data.get("scenes", []))[:300]
-        data["hook"] = pick_best_hook(api_key, data.get("title", ""), summary, cands[:10])
-        log(f"HOOK WINNER: {data['hook']}")
-    return data
-
+    # DELETED - awaiting new instructions
+    raise RuntimeError("gemini_script deleted")
 
 def fetch_openverse(query, out_path):
     try:
@@ -504,47 +360,7 @@ _enh_cache = {}
 
 
 def enhance_prompt(query, scene_text, topic):
-    ck = (query, scene_text)
-    if ck in _enh_cache:
-        return _enh_cache[ck]
-    api_key = load_config().get("gemini_api_key", "")
-    if not api_key:
-        return query
-    instruction = f"""You are an award-winning Hollywood thriller cinematographer for vertical 9:16 (720x1280) photorealistic survival images. Every image MUST illustrate EXACTLY the narration line - if narration says "gang kicks door", image MUST show that, no generic.
-
-STORY CONTEXT: {topic}
-NARRATION LINE: {scene_text}
-RAW SHOT IDEA: {query}
-
-Rewrite into ONE rich English image prompt (60-110 words) - US survival thriller, American setting:
-- exact subject: age, appearance, clothing, terrified expression, body pose, action matching narration word-for-word
-- setting: American suburb/forest/ocean/desert specifics, key props placed exactly as narration demands
-- composition: vertical 9:16, rule of thirds, foreground/midground/background layers that complete the scene
-- camera: 35mm/50mm feel, eye-level/low/high angle, shallow depth of field
-- lighting: cinematic volumetric, direction, mood, color temp matching survival emotion (cold blue for blizzard, orange fire for wildfire, harsh night porch light for home invasion)
-- atmosphere: heart-pounding, every pixel tells the survival story
-
-Rules: photorealistic photography only, ultra sharp, no text/watermarks/logos, no gear jargon beyond lens feel. Output ONLY final prompt, nothing else."""
-    body = {
-        "contents": [{"parts": [{"text": instruction}]}],
-        "generationConfig": {
-            "temperature": 0.8,
-            "maxOutputTokens": 900,
-            "thinkingConfig": {"thinkingBudget": 0},
-        },
-    }
-    for model in GEMINI_MODELS:
-        try:
-            r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-                params={"key": api_key}, json=body, timeout=90)
-            if r.ok:
-                txt = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip().strip('"')
-                if 40 < len(txt) < 900:
-                    _enh_cache[ck] = txt
-                    return txt
-        except Exception as e:
-            log(f"  enhance {model}: {e}")
-        time.sleep(2)
+    # DELETED - awaiting new instructions
     return query
 
 
