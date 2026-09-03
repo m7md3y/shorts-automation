@@ -35,6 +35,7 @@ on:
           - '22'
           - '0'
           - '2'
+          - '9'
           - '9:30'
       preview:
         description: 'Preview titles only'
