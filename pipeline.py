@@ -123,8 +123,24 @@ SUPERNATURAL_SURPRISES = ["confrontation_between_forces","sudden_appearance_chan
 # قائمة كلمات محظورة من الإفراط (Overuse Blacklist) - تُملأ ديناميكياً
 OVERUSE_BLACKLIST = []
 
-CATEGORIES = {}  # DELETED
-BANNED_PATTERNS = []  # DELETED
+CATEGORIES = {
+    "survival": {"name": "Survival", "name_ar": "نجاة", "type": "survival",
+        "prompt_suffix": "REALISTIC US survival: natural disasters, human threats, environmental/tech dangers, urban collective risks, rare curiosities. Visceral, high-stakes, primal fear for American viewers, end with 1 actionable tip.",
+        "tone": "intense, urgent, cinematic, heart-pounding, American"},
+    "supernatural": {"name": "Supernatural Encounter", "name_ar": "مواجهة خارقة", "type": "supernatural",
+        "prompt_suffix": "SUPERNATURAL EXTREME, semi-comedic: generic mythical creatures, astronomical phenomena, reversed nature, folklore entities at real US/UK landmarks. Visually impossible, Hollywood sci-fi scale. No copyrighted characters. End with witty/amazing final shot.",
+        "tone": "epic, mind-blowing, cinematic, playful"},
+    "whatif": {"name": "Supernatural Encounter", "name_ar": "مواجهة خارقة", "type": "supernatural",
+        "prompt_suffix": "SUPERNATURAL EXTREME, semi-comedic: generic mythical creatures, astronomical phenomena, reversed nature, folklore entities at real US/UK landmarks. No copyrighted characters.",
+        "tone": "epic, mind-blowing, cinematic, playful"},
+    "explained": {"name": "Survival", "name_ar": "نجاة", "type": "survival",
+        "prompt_suffix": "REALISTIC US survival: natural disasters, human threats, environmental/tech dangers, urban collective risks, rare curiosities. End with 1 actionable tip.",
+        "tone": "intense, urgent, cinematic, heart-pounding, American"},
+    "mystery": {"name": "Survival", "name_ar": "نجاة", "type": "survival",
+        "prompt_suffix": "REALISTIC US survival: natural disasters, human threats, environmental/tech dangers, urban collective risks, rare curiosities. End with 1 actionable tip.",
+        "tone": "intense, urgent, cinematic, heart-pounding, American"},
+}
+BANNED_PATTERNS = []
 
 def load_ledger():
     p = BASE / CONTENT_LEDGER
@@ -268,13 +284,86 @@ def script_qc(data, cfg):
 
 
 def pick_best_hook(api_key, title, scenes_summary, candidates):
-    # DELETED
+    cands = "\n".join(str(n + 1) + ". " + str(c) for n, c in enumerate(candidates))
+    prompt = ("You are a ruthless US Shorts retention judge. Video title: " + str(title)
+        + "\nStory: " + str(scenes_summary)
+        + "\n\nHook candidates:\n" + cands
+        + "\n\nScore each 1-10 on: curiosity gap, in-medias-res opening, specific number/fact, sync with first visual, brevity (1-2 sentences), stop-scroll power. "
+        + "Reject overused templates. Vary syntax vs recent hooks. Think briefly, answer with ONLY the NUMBER of the winner.")
+    body = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.3, "maxOutputTokens": 800}}
+    for model in GEMINI_MODELS:
+        try:
+            r = requests.post("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent",
+                params={"key": api_key}, json=body, timeout=90)
+            if r.ok:
+                txt = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                m = re.search(r"\b(\d+)\b", txt)
+                if m:
+                    idx = int(m.group(1)) - 1
+                    if 0 <= idx < len(candidates):
+                        return candidates[idx]
+        except Exception as e:
+            log("  hook-judge " + str(model) + ": " + str(e))
+        time.sleep(2)
     return candidates[0] if candidates else ""
 
 
+
 def gemini_script(api_key, niche, category="explained"):
-    # DELETED
-    raise RuntimeError("deleted")
+    ledger = load_ledger()
+    cat = CATEGORIES.get(category, CATEGORIES["survival"])
+    main_type = cat.get("type", "survival")
+    subcategory = category_rotation_engine(main_type)
+    recent = [e.get("title", "") for e in ledger[-150:]]
+    titles_block = "\n".join("- " + x for x in recent) if recent else "none"
+    recent20 = " | ".join([e.get("title", "") for e in ledger[-20:]])
+    recent_structs = ", ".join(sorted(set([str(e.get("hook_structure", "")) for e in ledger[-8:] if e.get("hook_structure", "")])))
+    target_words = random.randint(75, 105)
+    prompt = ("You are the world number 1 US Shorts writer. Audience: American primary, British secondary. "
+        "CATEGORY: " + cat["name"] + " | SUBCATEGORY: " + subcategory
+        + "\nSTYLE: " + cat.get("prompt_suffix", "")
+        + "\nTONE: " + cat.get("tone", "") + "\nNICHE: " + str(niche)
+        + "\nTARGET: " + str(target_words) + " words for a 30-45 sec video (2.2-2.6 spoken wps)."
+        + "\n\nALL PREVIOUS TITLES (do NOT repeat any core idea, even paraphrased - if your idea reduces to the same core sentence as any below, DISCARD it):\n" + titles_block
+        + "\n\nRECENT 20 TITLES (do not overuse any word appearing 4+ times): " + recent20
+        + "\nRECENT HOOK STRUCTURES (avoid these syntaxes): " + (recent_structs or "none")
+        + "\n\nTASK: 1) Write 3 HOOK options, each 1-2 sentences of 5-10 words, each a DIFFERENT syntax (question / shocking statement / direct command / numbered list). Each must: curiosity gap, start mid-action, specific number or fact when possible, match first visual, pass the stop-scroll test. Evaluate and keep the strongest. "
+        + "2) Full script: hook then escalation (every sentence higher tension, zero filler), climax, ending (practical tip for survival / witty final shot for supernatural). Address the viewer as You, simple American English, 5-10 words per sentence. "
+        + "3) Split into 6-10 numbered scenes (1-2 sentences each) with precise visual description and camera move (slow zoom-in / zoom-out / pan) and mood per scene."
+        + '\n\nReturn ONLY valid JSON: {"title": "...under 70 chars, curiosity gap, key words first", "description": "...2 sentences + 3-5 hashtags + CTA question", "tags": ["5-8 lowercase tags"], "core_idea": "2-3 sentence core summary", "hook": "chosen hook", "hook_candidates": ["3 hooks"], "hook_structure": "question|statement|command|numbered", "scenes": [{"text": "...", "visuals": ["..."], "overlays": [], "camera": "zoom-in|zoom-out|pan", "mood": "..."}], "visual_elements": {"place": "...", "entity": "...", "palette": "...", "camera_hook": "..."}, "subcategory": "' + subcategory + '", "main_type": "' + main_type + '"}')
+    body = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.95, "responseMimeType": "application/json", "maxOutputTokens": 3000}}
+    last_reject = ""
+    for attempt in range(1, 6):
+        ok_model = None
+        data = None
+        for model in GEMINI_MODELS:
+            try:
+                r = requests.post("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent",
+                    params={"key": api_key}, json=body, timeout=90)
+                if r.ok:
+                    data = json.loads(r.json()["candidates"][0]["content"]["parts"][0]["text"])
+                    ok_model = model
+                    break
+            except Exception as e:
+                log("  " + str(model) + ": " + str(e))
+                time.sleep(2)
+        if data is None:
+            log("GEMINI attempt " + str(attempt) + ": all models failed")
+            continue
+        okg, conflict = similarity_gate(data.get("title", ""), data.get("core_idea", ""))
+        if not okg:
+            last_reject = "similar to: " + str(conflict.get("title", ""))[:60]
+            log("Similarity gate reject (" + str(attempt) + "): " + last_reject)
+            continue
+        okb, word = overuse_blacklist_check(data.get("title", ""))
+        if not okb:
+            last_reject = "overused word: " + str(word)
+            log("Overuse blacklist reject (" + str(attempt) + "): " + last_reject)
+            continue
+        log("SCRIPT via " + str(ok_model) + " [" + cat["name"] + "] " + subcategory)
+        return data
+    raise RuntimeError("all gemini attempts rejected: " + last_reject)
+
 
 def fetch_openverse(query, out_path):
     try:
@@ -433,37 +522,32 @@ ENHANCE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.
 _enh_cache = {}
 
 
-def enhance_prompt(query, scene_text, topic):
-    # DELETED
-    return query
-    instruction = f"""You are a Flux prompt engineer for vertical 9:16 Shorts. Convert this scene to a Flux prompt.
-
-SCENE TEXT: {scene_text}
-RAW VISUAL: {query}
-TOPIC: {topic}
-STYLE LOCK: {style_lock}
-MOOD: {mood}
-
-Build a Flux prompt with EXACTLY these 7 components:
-1. Subject & precise action (who/what doing what)
-2. Camera angle (choose one: extreme close-up / close-up / medium shot / wide shot / low angle / bird's eye) - MUST specify
-3. Lighting source/mood (cold blue for night tension / warm red-orange for explosions / dramatic chiaroscuro / cosmic glow for supernatural)
-4. Style lock words (same for all scenes in this video): {style_lock}
-5. Dimensions: vertical 9:16
-6. Mood: {mood}
-7. Negative prompt: no deformed hands/faces, no garbled text, no wrong anatomy, no flat empty background
-
-Also keep visual consistency: if same character/creature appears across scenes, use identical description.
-Output ONLY the final prompt text, 60-110 words."""
+def enhance_prompt(query, scene_text, topic, style_lock, mood):
+    ck = (query, scene_text, style_lock, mood)
+    if ck in _enh_cache:
+        return _enh_cache[ck]
+    api_key = load_config().get("gemini_api_key", "")
+    if not api_key:
+        return query
+    instruction = ("Flux prompt engineer for vertical 9:16 Shorts. SCENE: " + str(scene_text)
+        + " RAW: " + str(query) + " TOPIC: " + str(topic) + " STYLE: " + str(style_lock) + " MOOD: " + str(mood)
+        + " Build prompt with: 1) exact subject+action 2) camera angle (extreme close-up/close-up/medium/wide/low angle/bird's eye - MUST specify) "
+        + "3) lighting (cold blue night tension / warm red-orange climax / dramatic chiaroscuro / cosmic glow) 4) style lock words: " + str(style_lock)
+        + " 5) vertical 9:16 6) mood: " + str(mood)
+        + " 7) negative: no deformed hands/faces, no garbled text, no wrong anatomy, no flat empty background. "
+        + "Keep same character description across scenes. Output ONLY prompt, 60-110 words.")
     body = {"contents": [{"parts": [{"text": instruction}]}], "generationConfig": {"temperature": 0.7, "maxOutputTokens": 600}}
     for model in GEMINI_MODELS:
         try:
-            r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent", params={"key": api_key}, json=body, timeout=60)
+            r = requests.post("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent",
+                params={"key": api_key}, json=body, timeout=60)
             if r.ok:
                 txt = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip().strip('"')
                 if 40 < len(txt) < 900:
+                    _enh_cache[ck] = txt
                     return txt
-        except: pass
+        except Exception:
+            pass
         time.sleep(1)
     return query
 
@@ -891,7 +975,8 @@ def build_video(cfg, data, category="explained"):
                     src = clip
             if src is None:
                 img = run_dir / f"img_{i:02d}_{j}.jpg"
-                rich_q = enhance_prompt(q, scene_txt, topic, style_lock, scene.get("mood","tension"))
+                sc = data["scenes"][i] if i < len(data.get("scenes", [])) else {}
+                rich_q = enhance_prompt(q, scene_txt, topic, style_lock, sc.get("mood", "tension"))
                 for attempt in range(3):
                     if gen_image_smart(rich_q, img, random.randint(1, 10 ** 6)) and verify_image(img):
                         src = img
@@ -1009,7 +1094,7 @@ def build_video(cfg, data, category="explained"):
     append_json_list("used_topics.json", data["title"])
     append_json_list("used_hooks.json", data["hook"])
     append_json_list("used_scripts.json", " ".join([data["hook"]] + [s["text"] for s in scenes]))
-    save_ledger_entry({"date": time.strftime("%Y-%m-%d %H:%M:%S"), "title": data["title"], "core_idea": data.get("core_idea",""), "full_text": " ".join([data["hook"]] + [s["text"] for s in scenes]), "main_type": data.get("main_type", chosen), "subcategory": data.get("subcategory",""), "visual_elements": data.get("visual_elements", {}), "hook_structure": data.get("hook_structure",""), "performance": {"views": 0, "avg_view_duration": 0, "likes": 0}})
+    save_ledger_entry({"date": time.strftime("%Y-%m-%d %H:%M:%S"), "title": data["title"], "core_idea": data.get("core_idea",""), "full_text": " ".join([data["hook"]] + [s["text"] for s in scenes]), "main_type": data.get("main_type", category), "subcategory": data.get("subcategory",""), "visual_elements": data.get("visual_elements", {}), "hook_structure": data.get("hook_structure",""), "performance": {"views": 0, "avg_view_duration": 0, "likes": 0}})
     state_append({"ts": ts, "title": data["title"], "file": str(final)})
     log(f"DONE: {final}")
     return meta
